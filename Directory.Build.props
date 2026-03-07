@@ -7,7 +7,7 @@
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
 
     <!-- Package metadata -->
-    <Authors>OnlineMenu Contributors</Authors>
+    <Authors>DLoizides</Authors>
     <Company>OnlineMenu</Company>
     <PackageProjectUrl>https://github.com/openmindednewby/Logging.Client</PackageProjectUrl>
     <RepositoryUrl>https://github.com/openmindednewby/Logging.Client</RepositoryUrl>
