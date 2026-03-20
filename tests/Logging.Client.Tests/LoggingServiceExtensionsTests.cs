@@ -111,6 +111,10 @@ public class LoggingServiceExtensionsTests
         options.SinkType.Should().Be(LogSinkType.Loki);
         options.EnablePiiMasking.Should().BeTrue();
         options.ConsoleTemplate.Should().Contain("{ServiceName}");
+        options.SentryDsn.Should().Be(string.Empty);
+        options.SentryEnvironment.Should().Be("Development");
+        options.SentryMinimumLevel.Should().Be(LogEventLevel.Error);
+        options.SentryTracesSampleRate.Should().Be(0.0);
     }
 
     [Fact]

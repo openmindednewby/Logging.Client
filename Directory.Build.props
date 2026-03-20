@@ -14,14 +14,14 @@
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <PackageTags>logging;serilog;loki;grafana;observability;structured-logging</PackageTags>
+    <PackageTags>logging;serilog;loki;grafana;observability;structured-logging;sentry;error-monitoring</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <Description>Shared structured logging configuration with Serilog, Grafana Loki sink, PII masking, correlation ID tracking, and tenant-aware enrichers for all SaaS services.</Description>
 
     <!-- Versioning -->
-    <Version>1.0.1</Version>
-    <AssemblyVersion>1.0.1.0</AssemblyVersion>
-    <FileVersion>1.0.1.0</FileVersion>
+    <Version>1.2.0</Version>
+    <AssemblyVersion>1.2.0.0</AssemblyVersion>
+    <FileVersion>1.2.0.0</FileVersion>
 
     <!-- NuGet settings -->
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
