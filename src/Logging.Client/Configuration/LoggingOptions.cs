@@ -16,12 +16,21 @@ public sealed class LoggingOptions
     /// <summary>
     /// The URL of the Grafana Loki instance for log ingestion.
     /// </summary>
-    public string LokiUrl { get; set; } = "http://loki:3100";
+    public string LokiUrl { get; set; } = "http://loki.monitoring.svc.cluster.local:3100";
 
     /// <summary>
     /// The active log sink type. Only one sink is active at a time.
     /// </summary>
     public LogSinkType SinkType { get; set; } = LogSinkType.Loki;
+
+    /// <summary>
+    /// Maximum number of log events buffered in memory while awaiting delivery to Loki.
+    /// When the queue is full, older events are dropped (and logged once to the console)
+    /// rather than allowing unbounded heap growth when Loki is unreachable, slow, or
+    /// rate-limiting. Set generously above peak burst rate; default is 10,000 events
+    /// (~5–15 MB depending on payload size).
+    /// </summary>
+    public int LokiQueueLimit { get; set; } = 10_000;
 
     /// <summary>
     /// Whether to enable PII masking in log output.

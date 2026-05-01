@@ -36,6 +36,10 @@ public static class LoggingServiceExtensions
         var options = new LoggingOptions();
         configure(options);
 
+        // Allow operators to tune the Loki sink queue depth from appsettings
+        // without recompiling.
+        BindLokiQueueLimit(builder.Configuration, options);
+
         // Bind Sentry config from appsettings if present
         var sentrySection = builder.Configuration.GetSection("Sentry");
         BindSentryConfiguration(sentrySection, options);
@@ -107,6 +111,8 @@ public static class LoggingServiceExtensions
         switch (options.SinkType)
         {
             case LogSinkType.Loki:
+                // queueLimit bounds the in-memory buffer so a stuck Loki endpoint
+                // (DNS failure, rate limit, downtime) cannot leak the heap.
                 configuration.WriteTo.GrafanaLoki(
                     options.LokiUrl,
                     labels: new[]
@@ -114,7 +120,8 @@ public static class LoggingServiceExtensions
                         new LokiLabel { Key = "ServiceName", Value = options.ServiceName },
                         new LokiLabel { Key = "Environment", Value = environment },
                     },
-                    propertiesAsLabels: new[] { "TenantId", "Level" });
+                    propertiesAsLabels: new[] { "TenantId", "Level" },
+                    queueLimit: options.LokiQueueLimit);
                 break;
 
             case LogSinkType.Console:
@@ -205,5 +212,19 @@ public static class LoggingServiceExtensions
         var tracesSampleRate = sentrySection["TracesSampleRate"];
         if (!string.IsNullOrEmpty(tracesSampleRate) && double.TryParse(tracesSampleRate, out var rate))
             options.SentryTracesSampleRate = Math.Clamp(rate, 0.0, 1.0);
+    }
+
+    /// <summary>
+    /// Reads <c>Logging:LokiQueueLimit</c> from configuration and applies it to
+    /// the options when the value is a positive integer. Invalid or missing
+    /// values leave the existing default in place.
+    /// </summary>
+    internal static void BindLokiQueueLimit(
+        IConfiguration configuration,
+        LoggingOptions options)
+    {
+        var value = configuration["Logging:LokiQueueLimit"];
+        if (!string.IsNullOrEmpty(value) && int.TryParse(value, out var parsed) && parsed > 0)
+            options.LokiQueueLimit = parsed;
     }
 }
