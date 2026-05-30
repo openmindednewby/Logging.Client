@@ -8,7 +8,7 @@ namespace Logging.Client.Configuration;
 public sealed class LoggingOptions
 {
     /// <summary>
-    /// The name of the service (e.g., "IdentityService", "OnlineMenuService").
+    /// The name of the service (e.g., "TenantService", "OnlineMenuService").
     /// Used as a Loki label for filtering logs by service.
     /// </summary>
     public string ServiceName { get; set; } = "Unknown";
