@@ -113,6 +113,9 @@ public class LoggingServiceExtensionsTests
         options.LokiQueueLimit.Should().Be(10_000);
         options.EnablePiiMasking.Should().BeTrue();
         options.ConsoleTemplate.Should().Contain("{ServiceName}");
+        // CorrelationId must be in the console line so Promtail-based clusters
+        // (stdout scraping, no direct Loki sink) can match a `|= <id>` filter.
+        options.ConsoleTemplate.Should().Contain("{CorrelationId}");
         options.SentryDsn.Should().Be(string.Empty);
         options.SentryEnvironment.Should().Be("Development");
         options.SentryMinimumLevel.Should().Be(LogEventLevel.Error);

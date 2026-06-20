@@ -40,9 +40,16 @@ public sealed class LoggingOptions
 
     /// <summary>
     /// The output template for console logging.
+    ///
+    /// Includes <c>{CorrelationId}</c> so the request-correlation id is present in
+    /// the stdout line itself. In clusters that ship logs to Loki via Promtail
+    /// (stdout scraping) rather than the direct Serilog Loki sink, this is the
+    /// only way the correlation id reaches Loki — without it, a `|= <id>` line
+    /// filter can never match (the id lives only in the sink's structured JSON,
+    /// which Promtail-based clusters never produce).
     /// </summary>
     public string ConsoleTemplate { get; set; } =
-        "[{Timestamp:HH:mm:ss} {Level:u3}] [{ServiceName}] {Message:lj}{NewLine}{Exception}";
+        "[{Timestamp:HH:mm:ss} {Level:u3}] [{ServiceName}] [{CorrelationId}] {Message:lj}{NewLine}{Exception}";
 
     /// <summary>
     /// The Sentry DSN for error monitoring. When empty, Sentry is disabled.
