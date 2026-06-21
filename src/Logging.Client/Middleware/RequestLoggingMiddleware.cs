@@ -19,8 +19,11 @@ public static class RequestLoggingMiddleware
         {
             options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
             {
-                // Add TenantId from claims
-                var tenantId = httpContext.User?.FindFirst("tenant_id")?.Value;
+                // Add TenantId from claims. Tokens vary: some realms emit the
+                // snake_case `tenant_id`, others the camelCase `tenantId` — accept
+                // either so the property lands regardless of the realm's mapper.
+                var tenantId = httpContext.User?.FindFirst("tenant_id")?.Value
+                    ?? httpContext.User?.FindFirst("tenantId")?.Value;
                 if (!string.IsNullOrEmpty(tenantId))
                     diagnosticContext.Set("TenantId", tenantId);
 

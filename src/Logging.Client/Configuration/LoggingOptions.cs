@@ -49,7 +49,7 @@ public sealed class LoggingOptions
     /// which Promtail-based clusters never produce).
     /// </summary>
     public string ConsoleTemplate { get; set; } =
-        "[{Timestamp:HH:mm:ss} {Level:u3}] [{ServiceName}] [{CorrelationId}] {Message:lj}{NewLine}{Exception}";
+        "[{Timestamp:HH:mm:ss} {Level:u3}] [{ServiceName}] [{CorrelationId}] {Message:lj} {Properties:j}{NewLine}{Exception}";
 
     /// <summary>
     /// The Sentry DSN for error monitoring. When empty, Sentry is disabled.
