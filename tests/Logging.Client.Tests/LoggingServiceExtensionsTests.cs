@@ -109,7 +109,10 @@ public class LoggingServiceExtensionsTests
         // Assert
         options.ServiceName.Should().Be("Unknown");
         options.LokiUrl.Should().Be("http://loki.monitoring.svc.cluster.local:3100");
-        options.SinkType.Should().Be(LogSinkType.Loki);
+        // The direct Loki sink is OPT-IN. It defaults to Console because Promtail already
+        // ships stdout to the real Loki on both clusters, and a Loki sink pointed at an
+        // endpoint that does not resolve buffers to OOM rather than failing loudly.
+        options.SinkType.Should().Be(LogSinkType.Console);
         options.LokiQueueLimit.Should().Be(10_000);
         options.EnablePiiMasking.Should().BeTrue();
         options.ConsoleTemplate.Should().Contain("{ServiceName}");
@@ -156,6 +159,82 @@ public class LoggingServiceExtensionsTests
 
         // Assert
         options.LokiQueueLimit.Should().Be(10_000);
+    }
+
+    [Theory]
+    [InlineData("Loki", LogSinkType.Loki)]
+    [InlineData("loki", LogSinkType.Loki)]
+    [InlineData("Console", LogSinkType.Console)]
+    public void BindSinkType_KnownValue_OptsIntoThatSink(string raw, LogSinkType expected)
+    {
+        // Arrange — this is the documented Logging__SinkType opt-in path
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?> { ["Logging:SinkType"] = raw })
+            .Build();
+        var options = new LoggingOptions();
+
+        // Act
+        LoggingServiceExtensions.BindSinkType(config, options);
+
+        // Assert
+        options.SinkType.Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("Elasticsearch")]
+    [InlineData("7")]
+    public void BindSinkType_UnknownOrMissing_KeepsConsoleDefault(string raw)
+    {
+        // Arrange
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?> { ["Logging:SinkType"] = raw })
+            .Build();
+        var options = new LoggingOptions();
+
+        // Act
+        LoggingServiceExtensions.BindSinkType(config, options);
+
+        // Assert
+        options.SinkType.Should().Be(LogSinkType.Console);
+    }
+
+    [Fact]
+    public void BindLokiUrl_ValueProvided_OverridesDefault()
+    {
+        // Arrange
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Logging:LokiUrl"] = "http://10.0.0.2:31300",
+            })
+            .Build();
+        var options = new LoggingOptions();
+
+        // Act
+        LoggingServiceExtensions.BindLokiUrl(config, options);
+
+        // Assert
+        options.LokiUrl.Should().Be("http://10.0.0.2:31300");
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void BindLokiUrl_EmptyOrMissing_KeepsExistingValue(string raw)
+    {
+        // Arrange
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?> { ["Logging:LokiUrl"] = raw })
+            .Build();
+        var options = new LoggingOptions { LokiUrl = "http://existing:3100" };
+
+        // Act
+        LoggingServiceExtensions.BindLokiUrl(config, options);
+
+        // Assert
+        options.LokiUrl.Should().Be("http://existing:3100");
     }
 
     [Fact]

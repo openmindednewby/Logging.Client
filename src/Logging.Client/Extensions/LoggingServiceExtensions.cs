@@ -1,5 +1,6 @@
 using Logging.Client.Configuration;
 using Logging.Client.Context;
+using Logging.Client.Diagnostics;
 using Logging.Client.Enrichers;
 using Logging.Client.Masking;
 using Logging.Client.Middleware;
@@ -36,9 +37,22 @@ public static class LoggingServiceExtensions
         var options = new LoggingOptions();
         configure(options);
 
+        // Allow operators to select the sink and point it somewhere from appsettings /
+        // environment (Logging__SinkType, Logging__LokiUrl) without recompiling. Config wins
+        // over the code-supplied value, matching the LokiQueueLimit precedent below.
+        BindSinkType(builder.Configuration, options);
+        BindLokiUrl(builder.Configuration, options);
+
         // Allow operators to tune the Loki sink queue depth from appsettings
         // without recompiling.
         BindLokiQueueLimit(builder.Configuration, options);
+
+        // Startup guard: never register a buffering Loki sink against an endpoint that
+        // cannot be reached. See LokiEndpointGuard for why this is a leak, not an outage.
+        options.SinkType = LokiEndpointGuard.ResolveEffectiveSinkType(
+            options,
+            LokiEndpointGuard.DnsHostResolver,
+            LokiEndpointGuard.WriteStartupWarning);
 
         // Bind Sentry config from appsettings if present
         var sentrySection = builder.Configuration.GetSection("Sentry");
@@ -212,6 +226,35 @@ public static class LoggingServiceExtensions
         var tracesSampleRate = sentrySection["TracesSampleRate"];
         if (!string.IsNullOrEmpty(tracesSampleRate) && double.TryParse(tracesSampleRate, out var rate))
             options.SentryTracesSampleRate = Math.Clamp(rate, 0.0, 1.0);
+    }
+
+    /// <summary>
+    /// Reads <c>Logging:SinkType</c> from configuration and applies it to the options when
+    /// the value names a known <see cref="LogSinkType"/>. This is what makes the documented
+    /// <c>Logging__SinkType=Loki</c> opt-in real — without it the setting would be inert.
+    /// Unknown or missing values leave the existing value in place.
+    /// </summary>
+    internal static void BindSinkType(
+        IConfiguration configuration,
+        LoggingOptions options)
+    {
+        var value = configuration["Logging:SinkType"];
+        if (!string.IsNullOrWhiteSpace(value) && Enum.TryParse<LogSinkType>(value, true, out var parsed)
+            && Enum.IsDefined(parsed))
+            options.SinkType = parsed;
+    }
+
+    /// <summary>
+    /// Reads <c>Logging:LokiUrl</c> from configuration and applies it to the options when a
+    /// non-empty value is present. Missing values leave the existing value in place.
+    /// </summary>
+    internal static void BindLokiUrl(
+        IConfiguration configuration,
+        LoggingOptions options)
+    {
+        var value = configuration["Logging:LokiUrl"];
+        if (!string.IsNullOrWhiteSpace(value))
+            options.LokiUrl = value;
     }
 
     /// <summary>

@@ -14,14 +14,28 @@ public sealed class LoggingOptions
     public string ServiceName { get; set; } = "Unknown";
 
     /// <summary>
-    /// The URL of the Grafana Loki instance for log ingestion.
+    /// The URL of the Grafana Loki instance for log ingestion. Only used when
+    /// <see cref="SinkType"/> is <see cref="LogSinkType.Loki"/>.
+    ///
+    /// NOTE: this default host does NOT exist in the production cluster (Loki runs on
+    /// staging). It is kept only so an explicit opt-in that forgets to set the URL fails
+    /// visibly: the startup guard resolves this host, finds nothing, and falls back to the
+    /// console sink instead of buffering to an OOM. Override via <c>Logging:LokiUrl</c>.
     /// </summary>
     public string LokiUrl { get; set; } = "http://loki.monitoring.svc.cluster.local:3100";
 
     /// <summary>
     /// The active log sink type. Only one sink is active at a time.
+    ///
+    /// Defaults to <see cref="LogSinkType.Console"/>. Promtail runs on BOTH clusters and
+    /// already ships container stdout to the real Loki (prod promtail →
+    /// <c>http://10.0.0.2:31300/loki/api/v1/push</c> with a <c>cluster: prod</c> label), so
+    /// the direct Serilog Loki sink is redundant everywhere and only adds a failure mode:
+    /// when its endpoint does not resolve, the sink queues every event in memory and the pod
+    /// is eventually OOMKilled. Services that genuinely want the direct sink opt in with
+    /// <c>Logging__SinkType=Loki</c>.
     /// </summary>
-    public LogSinkType SinkType { get; set; } = LogSinkType.Loki;
+    public LogSinkType SinkType { get; set; } = LogSinkType.Console;
 
     /// <summary>
     /// Maximum number of log events buffered in memory while awaiting delivery to Loki.
@@ -44,7 +58,7 @@ public sealed class LoggingOptions
     /// Includes <c>{CorrelationId}</c> so the request-correlation id is present in
     /// the stdout line itself. In clusters that ship logs to Loki via Promtail
     /// (stdout scraping) rather than the direct Serilog Loki sink, this is the
-    /// only way the correlation id reaches Loki — without it, a `|= <id>` line
+    /// only way the correlation id reaches Loki — without it, a <c>|= &lt;id&gt;</c> line
     /// filter can never match (the id lives only in the sink's structured JSON,
     /// which Promtail-based clusters never produce).
     /// </summary>
