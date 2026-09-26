@@ -71,6 +71,13 @@ public sealed class LoggingOptions
     public string SentryDsn { get; set; } = string.Empty;
 
     /// <summary>
+    /// Kill switch for Sentry. When false, Sentry stays off even if a DSN is configured.
+    /// Default true (Sentry is then active only when <see cref="SentryDsn"/> is set).
+    /// Override via <c>Sentry:Enabled</c> (env <c>Sentry__Enabled=false</c>).
+    /// </summary>
+    public bool SentryEnabled { get; set; } = true;
+
+    /// <summary>
     /// The Sentry environment name (e.g., "Development", "Staging", "Production").
     /// </summary>
     public string SentryEnvironment { get; set; } = "Development";

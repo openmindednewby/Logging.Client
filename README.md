@@ -45,6 +45,17 @@ Logging__LokiUrl=http://loki.monitoring.svc.cluster.local:3100
 
 Configuration wins over the values passed to `AddStructuredLogging(opts => ...)`.
 
+### Running without Loki or Sentry (since 1.7.0)
+
+| Setting | Effect |
+|---|---|
+| `Logging__SinkType=Console` (default) | stdout only; needs no Loki |
+| `Logging__SinkType=None` | no sink at all, not even the console |
+| `Sentry__Enabled=false` | Sentry stays off even if `Sentry__Dsn` is set |
+
+Correlation-id enrichment, the `X-Correlation-ID` middleware and the PII masking policy stay in
+the pipeline in every mode; nothing contacts Loki or Sentry unless selected.
+
 ## Documentation
 
 See the [NuGet package page](https://www.nuget.org/packages/Logging.Client) for full documentation.

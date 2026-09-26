@@ -241,8 +241,9 @@ public class LoggingServiceExtensionsTests
     public void LogSinkType_HasExpectedValues()
     {
         // Assert
-        Enum.GetValues<LogSinkType>().Should().HaveCount(2);
+        Enum.GetValues<LogSinkType>().Should().HaveCount(3);
         ((int)LogSinkType.Loki).Should().Be(0);
         ((int)LogSinkType.Console).Should().Be(1);
+        ((int)LogSinkType.None).Should().Be(2);
     }
 }

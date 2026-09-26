@@ -60,29 +60,7 @@ public static class LoggingServiceExtensions
 
         var environment = builder.Environment.EnvironmentName;
 
-        var configuration = new LoggerConfiguration()
-            .MinimumLevel.Information()
-            .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-            .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Information)
-            .MinimumLevel.Override("System", LogEventLevel.Warning)
-            .Enrich.FromLogContext()
-            .Enrich.WithMachineName()
-            .Enrich.WithProperty("ServiceName", options.ServiceName)
-            .Enrich.WithProperty("Environment", environment)
-            .Enrich.With<CorrelationIdEnricher>();
-
-        // PII masking
-        if (options.EnablePiiMasking)
-            configuration.Destructure.With<PiiMaskingPolicy>();
-
-        // Console sink (always enabled for local visibility)
-        configuration.WriteTo.Console(outputTemplate: options.ConsoleTemplate);
-
-        // Configure the primary sink based on SinkType
-        ConfigureSink(configuration, options, environment);
-
-        // Configure Sentry Serilog sink (runs alongside the primary sink, not instead of it)
-        ConfigureSentrySink(configuration, options);
+        var configuration = CreateLoggerConfiguration(options, environment);
 
         Log.Logger = configuration.CreateLogger();
         builder.Host.UseSerilog();
@@ -95,6 +73,55 @@ public static class LoggingServiceExtensions
 
         return builder;
     }
+
+    /// <summary>
+    /// Builds the Serilog pipeline: enrichers (service, environment, correlation id), PII
+    /// masking, the console sink unless <see cref="LogSinkType.None"/>, the primary sink and
+    /// the Sentry sink when active.
+    /// </summary>
+    internal static LoggerConfiguration CreateLoggerConfiguration(
+        LoggingOptions options,
+        string environment)
+    {
+        var configuration = new LoggerConfiguration()
+            .MinimumLevel.Information()
+            .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+            .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Information)
+            .MinimumLevel.Override("System", LogEventLevel.Warning)
+            .Enrich.FromLogContext()
+            .Enrich.WithMachineName()
+            .Enrich.WithProperty("ServiceName", options.ServiceName)
+            .Enrich.WithProperty("Environment", environment)
+            .Enrich.With<CorrelationIdEnricher>();
+
+        if (options.EnablePiiMasking)
+            configuration.Destructure.With<PiiMaskingPolicy>();
+
+        // Console sink for local visibility and Promtail scraping; off only for None.
+        if (WritesToConsole(options))
+            configuration.WriteTo.Console(outputTemplate: options.ConsoleTemplate);
+
+        ConfigureSink(configuration, options, environment);
+
+        // Sentry Serilog sink runs alongside the primary sink, not instead of it.
+        ConfigureSentrySink(configuration, options);
+
+        return configuration;
+    }
+
+    /// <summary>
+    /// Whether the console sink is registered. True for every sink type except
+    /// <see cref="LogSinkType.None"/>.
+    /// </summary>
+    internal static bool WritesToConsole(LoggingOptions options) =>
+        options.SinkType != LogSinkType.None;
+
+    /// <summary>
+    /// Whether Sentry is wired: a DSN is configured and <see cref="LoggingOptions.SentryEnabled"/>
+    /// has not switched it off.
+    /// </summary>
+    internal static bool IsSentryActive(LoggingOptions options) =>
+        options.SentryEnabled && !string.IsNullOrEmpty(options.SentryDsn);
 
     /// <summary>
     /// Adds the correlation ID middleware to the application pipeline.
@@ -139,7 +166,8 @@ public static class LoggingServiceExtensions
                 break;
 
             case LogSinkType.Console:
-                // Console sink already added above; no extra sink needed
+            case LogSinkType.None:
+                // Console handled by CreateLoggerConfiguration; None registers nothing.
                 break;
 
             default:
@@ -157,7 +185,7 @@ public static class LoggingServiceExtensions
         LoggerConfiguration configuration,
         LoggingOptions options)
     {
-        if (string.IsNullOrEmpty(options.SentryDsn)) return;
+        if (!IsSentryActive(options)) return;
 
         configuration.WriteTo.Sentry(o =>
         {
@@ -173,14 +201,14 @@ public static class LoggingServiceExtensions
     /// Initializes the full Sentry SDK via <c>UseSentry()</c> on the web host builder.
     /// This enables performance monitoring (transaction tracing), automatic breadcrumb capture,
     /// and request/response context. The Serilog sink handles error-level events separately.
-    /// No-op when <see cref="LoggingOptions.SentryDsn"/> is empty.
+    /// No-op when <see cref="LoggingOptions.SentryDsn"/> is empty or Sentry is switched off.
     /// </summary>
     internal static void ConfigureSentrySdk(
         WebApplicationBuilder builder,
         LoggingOptions options,
         string environment)
     {
-        if (string.IsNullOrEmpty(options.SentryDsn)) return;
+        if (!IsSentryActive(options)) return;
 
         builder.WebHost.UseSentry(o =>
         {
@@ -205,13 +233,17 @@ public static class LoggingServiceExtensions
 
     /// <summary>
     /// Binds Sentry configuration values from the <c>Sentry</c> configuration section.
-    /// Reads Dsn, Environment, MinimumEventLevel, and TracesSampleRate.
+    /// Reads Enabled, Dsn, Environment, MinimumEventLevel, and TracesSampleRate.
     /// </summary>
     internal static void BindSentryConfiguration(
         IConfigurationSection sentrySection,
         LoggingOptions options)
     {
         if (!sentrySection.Exists()) return;
+
+        var enabled = sentrySection["Enabled"];
+        if (!string.IsNullOrEmpty(enabled) && bool.TryParse(enabled, out var isEnabled))
+            options.SentryEnabled = isEnabled;
 
         var dsn = sentrySection["Dsn"];
         if (!string.IsNullOrEmpty(dsn)) options.SentryDsn = dsn;
