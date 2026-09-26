@@ -91,12 +91,12 @@ public class SinkSwitchTests
     public void CreateLoggerConfiguration_NoneSink_EnrichesAndMasksExactlyLikeConsole()
     {
         // Masking and enrichment are sink-independent: the None pipeline must produce the
-        // same event as the Console pipeline. (Whether the PII policy masks a destructured
-        // string at all is a separate pre-existing question, logged in the OBS-1 task doc.)
+        // same event as the Console pipeline, with the email masked in both.
         var none = Capture(LogSinkType.None);
         var console = Capture(LogSinkType.Console);
 
         none.Properties["Email"].ToString().Should().Be(console.Properties["Email"].ToString());
+        none.Properties["Email"].ToString().Should().NotContain("longusername");
         none.Properties["CorrelationId"].ToString().Should().Contain("corr-123");
         none.Properties["ServiceName"].ToString().Should().Contain("Svc");
     }

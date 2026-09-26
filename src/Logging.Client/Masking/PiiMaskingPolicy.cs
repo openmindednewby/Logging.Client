@@ -5,9 +5,14 @@ using Serilog.Events;
 namespace Logging.Client.Masking;
 
 /// <summary>
-/// A Serilog destructuring policy that masks PII (emails, phone numbers)
-/// and sensitive property values in structured log output.
+/// Holds the PII masking rules (emails, phone numbers, sensitive property names) and exposes
+/// them as a Serilog destructuring policy for non-string values.
 /// </summary>
+/// <remarks>
+/// Serilog converts strings with its built-in scalar policy before any destructuring policy
+/// runs, so this policy is never offered a string. The package pipeline masks through
+/// <see cref="PiiMaskingEnricher"/>, which reuses these rules. Kept public for existing consumers.
+/// </remarks>
 public partial class PiiMaskingPolicy : IDestructuringPolicy
 {
     // Matches: user@domain.com

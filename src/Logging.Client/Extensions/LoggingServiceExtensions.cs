@@ -94,8 +94,10 @@ public static class LoggingServiceExtensions
             .Enrich.WithProperty("Environment", environment)
             .Enrich.With<CorrelationIdEnricher>();
 
+        // Enricher, not a destructuring policy: Serilog never offers strings to an
+        // IDestructuringPolicy. Registered last so it also masks what earlier enrichers added.
         if (options.EnablePiiMasking)
-            configuration.Destructure.With<PiiMaskingPolicy>();
+            configuration.Enrich.With<PiiMaskingEnricher>();
 
         // Console sink for local visibility and Promtail scraping; off only for None.
         if (WritesToConsole(options))
