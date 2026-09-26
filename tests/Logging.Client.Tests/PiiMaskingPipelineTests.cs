@@ -90,11 +90,30 @@ public class PiiMaskingPipelineTests
     [InlineData("mobileNumber")]
     [InlineData("Msisdn")]
     [InlineData("HomeTel")]
+    [InlineData("Tel")]
+    [InlineData("tel")]
+    [InlineData("tel_no")]
+    [InlineData("TelNumber")]
+    [InlineData("Telephone")]
+    [InlineData("SMSPhone")]
     public void Log_PhoneNamedProperty_IsMaskedWhateverItsShape(string name)
     {
         var logEvent = Capture(LogSinkType.Console, l => l.Information("{" + name + "}", "12345"));
 
         logEvent.Properties[name].ToString().Should().NotContain("12345").And.Contain("***");
+    }
+
+    // "Tel" must be a whole word of the name, not a substring of another word.
+    [Theory]
+    [InlineData("Hotel")]
+    [InlineData("TelemetryId")]
+    [InlineData("Intel")]
+    [InlineData("hotel_name")]
+    public void Log_NameContainingTelInsideAWord_IsNotAPhoneName(string name)
+    {
+        var logEvent = Capture(LogSinkType.Console, l => l.Information("{" + name + "}", "12345"));
+
+        logEvent.Properties[name].ToString().Should().Be("\"12345\"");
     }
 
     [Fact]
