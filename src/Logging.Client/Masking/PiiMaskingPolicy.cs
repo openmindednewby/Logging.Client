@@ -19,11 +19,21 @@ public partial class PiiMaskingPolicy : IDestructuringPolicy
     [GeneratedRegex(@"^([^@]{1})([^@]*)(@.+)$", RegexOptions.Compiled)]
     private static partial Regex EmailRegex();
 
-    // Matches: +1-234-567-8901, (234) 567-8901, 234-567-8901, 2345678901, etc.
-    [GeneratedRegex(@"^[\+]?[\d\s\-\(\)]{7,}$", RegexOptions.Compiled)]
-    private static partial Regex PhoneRegex();
+    // Characters a written phone number may use: optional leading +, digits, spaces, - ( ).
+    [GeneratedRegex(@"^\+?[\d\s\-\(\)]+$", RegexOptions.Compiled)]
+    private static partial Regex PhoneCharactersRegex();
 
-    private const int MinPhoneDigits = 4;
+    // yyyy-MM-dd: has a separator and 8 digits, but is a date, not a phone number.
+    [GeneratedRegex(@"^\d{4}-\d{2}-\d{2}$", RegexOptions.Compiled)]
+    private static partial Regex IsoDateRegex();
+
+    private const int MinPhoneDigits = 8;
+    private const int MaxPhoneDigits = 15;
+    private const int VisiblePhoneDigits = 4;
+    private const string Redacted = "***REDACTED***";
+
+    // A property whose name contains one of these is masked whatever its value looks like.
+    private static readonly string[] PhoneNameMarkers = ["Phone", "Mobile", "Msisdn", "Tel"];
 
     /// <summary>
     /// Attempts to destructure the given value, masking PII content.
@@ -52,15 +62,44 @@ public partial class PiiMaskingPolicy : IDestructuringPolicy
     {
         if (string.IsNullOrEmpty(value)) return value;
 
-        // Check email pattern
-        var emailMatch = EmailRegex().Match(value);
-        if (emailMatch.Success) return MaskEmail(emailMatch);
+        if (value.Contains('@'))
+        {
+            var emailMatch = EmailRegex().Match(value);
+            return emailMatch.Success ? MaskEmail(emailMatch) : value;
+        }
 
-        // Check phone pattern
-        if (PhoneRegex().IsMatch(value)) return MaskPhone(value);
-
-        return value;
+        return LooksLikePhone(value) ? MaskPhone(value) : value;
     }
+
+    /// <summary>
+    /// Tight phone rule (OBS-1 owner decision Q2 "PII rule"): 8-15 digits written only with
+    /// phone characters, and either a leading <c>+</c> or at least one separator. An ISO date,
+    /// an all-digit order reference and a numeric correlation id do not qualify.
+    /// </summary>
+    internal static bool LooksLikePhone(string value)
+    {
+        var digits = value.Count(char.IsDigit);
+        if (digits is < MinPhoneDigits or > MaxPhoneDigits) return false;
+        if (!PhoneCharactersRegex().IsMatch(value)) return false;
+        if (value[0] == '+') return true;
+
+        var hasSeparator = digits != value.Length;
+        return hasSeparator && !IsoDateRegex().IsMatch(value);
+    }
+
+    /// <summary>
+    /// Whether the property name marks a phone number (contains Phone, Mobile, Msisdn or Tel,
+    /// case-insensitive).
+    /// </summary>
+    internal static bool IsPhoneName(string propertyName) =>
+        PhoneNameMarkers.Any(marker => propertyName.Contains(marker, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>
+    /// Masks the value of a phone-named property: last four digits when it reads as a phone
+    /// number, fully redacted otherwise.
+    /// </summary>
+    internal static string MaskPhoneNamedValue(string? value) =>
+        value is not null && LooksLikePhone(value) ? MaskPhone(value) : Redacted;
 
     /// <summary>
     /// Masks a property value if the property name is in the sensitive names list.
@@ -68,7 +107,9 @@ public partial class PiiMaskingPolicy : IDestructuringPolicy
     internal static string MaskSensitiveProperty(string propertyName, string value)
     {
         if (SensitivePropertyNames.Names.Contains(propertyName))
-            return "***REDACTED***";
+            return Redacted;
+
+        if (IsPhoneName(propertyName)) return MaskPhoneNamedValue(value);
 
         return MaskIfPii(value);
     }
@@ -95,12 +136,12 @@ public partial class PiiMaskingPolicy : IDestructuringPolicy
     {
         // Extract just the digits
         var digits = new string(phone.Where(char.IsDigit).ToArray());
-        if (digits.Length < MinPhoneDigits) return phone;
+        if (digits.Length < VisiblePhoneDigits) return phone;
 
         // Show only the last 4 digits
-        var lastFour = digits[^4..];
+        var lastFour = digits[^VisiblePhoneDigits..];
         var maskedPrefix = string.Join("-",
-            Enumerable.Repeat("***", Math.Max(1, (digits.Length - 4) / 3)));
+            Enumerable.Repeat("***", Math.Max(1, (digits.Length - VisiblePhoneDigits) / 3)));
 
         return $"{maskedPrefix}-{lastFour}";
     }

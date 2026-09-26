@@ -5,16 +5,18 @@ namespace Logging.Client.Masking;
 
 /// <summary>
 /// Masks PII in every bound property of a log event: string scalars that look like an email
-/// or phone number, and the whole value of any property whose name is in
-/// <see cref="SensitivePropertyNames"/>. Walks structures, sequences and dictionaries, so
-/// <c>{@Email}</c>, <c>{Email}</c> and a destructured object's nested members are all covered.
+/// or phone number (see <see cref="PiiMaskingPolicy.LooksLikePhone"/>), the whole value of any
+/// property named in <see cref="SensitivePropertyNames"/>, and any phone-named property. Walks
+/// structures, sequences and dictionaries, so <c>{@Email}</c>, <c>{Email}</c> and a destructured
+/// object's nested members are all covered.
 /// </summary>
 /// <remarks>
 /// This is an enricher, not a destructuring policy, because Serilog converts strings with its
 /// built-in scalar conversion before any <see cref="IDestructuringPolicy"/> is consulted, so
 /// <see cref="PiiMaskingPolicy"/> is never offered a string. Enrichers run after binding and
 /// before sinks, so the rendered message and every sink (Console, Loki, Sentry) see masked values.
-/// Register it after all other enrichers.
+/// Register it after all other enrichers. It runs on every event, so it allocates only when a
+/// value actually changes.
 /// </remarks>
 public sealed class PiiMaskingEnricher : ILogEventEnricher
 {
@@ -23,12 +25,18 @@ public sealed class PiiMaskingEnricher : ILogEventEnricher
     /// <inheritdoc />
     public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)
     {
-        foreach (var (name, value) in logEvent.Properties.ToList())
+        List<LogEventProperty>? changes = null;
+        foreach (var (name, value) in logEvent.Properties)
         {
             var masked = Mask(name, value);
             if (!ReferenceEquals(masked, value))
-                logEvent.AddOrUpdateProperty(new LogEventProperty(name, masked));
+                (changes ??= []).Add(new LogEventProperty(name, masked));
         }
+
+        if (changes is null) return;
+
+        foreach (var property in changes)
+            logEvent.AddOrUpdateProperty(property);
     }
 
     /// <summary>
@@ -39,6 +47,9 @@ public sealed class PiiMaskingEnricher : ILogEventEnricher
     {
         if (name is not null && SensitivePropertyNames.Names.Contains(name))
             return new ScalarValue(Redacted);
+
+        if (name is not null && PiiMaskingPolicy.IsPhoneName(name))
+            return new ScalarValue(PiiMaskingPolicy.MaskPhoneNamedValue((value as ScalarValue)?.Value as string));
 
         return value switch
         {
@@ -53,46 +64,60 @@ public sealed class PiiMaskingEnricher : ILogEventEnricher
     private static LogEventPropertyValue MaskScalar(LogEventPropertyValue original, string s)
     {
         var masked = PiiMaskingPolicy.MaskIfPii(s);
-        return masked == s ? original : new ScalarValue(masked);
+        return ReferenceEquals(masked, s) ? original : new ScalarValue(masked);
     }
 
     private static LogEventPropertyValue MaskStructure(StructureValue structure)
     {
-        var changed = false;
-        var properties = structure.Properties.Select(p =>
+        var copy = CopyOnFirstChange(structure.Properties, p =>
         {
             var masked = Mask(p.Name, p.Value);
-            changed |= !ReferenceEquals(masked, p.Value);
-            return new LogEventProperty(p.Name, masked);
-        }).ToList();
+            return ReferenceEquals(masked, p.Value) ? p : new LogEventProperty(p.Name, masked);
+        });
 
-        return changed ? new StructureValue(properties, structure.TypeTag) : structure;
+        return copy is null ? structure : new StructureValue(copy, structure.TypeTag);
     }
 
     private static LogEventPropertyValue MaskSequence(SequenceValue sequence)
     {
-        var changed = false;
-        var elements = sequence.Elements.Select(e =>
-        {
-            var masked = Mask(null, e);
-            changed |= !ReferenceEquals(masked, e);
-            return masked;
-        }).ToList();
-
-        return changed ? new SequenceValue(elements) : sequence;
+        var copy = CopyOnFirstChange(sequence.Elements, e => Mask(null, e));
+        return copy is null ? sequence : new SequenceValue(copy);
     }
 
     private static LogEventPropertyValue MaskDictionary(DictionaryValue dictionary)
     {
-        var changed = false;
-        var entries = dictionary.Elements.Select(kv =>
+        List<KeyValuePair<ScalarValue, LogEventPropertyValue>>? copy = null;
+        var index = 0;
+        foreach (var (key, value) in dictionary.Elements)
         {
-            var key = kv.Key.Value as string;
-            var masked = Mask(key, kv.Value);
-            changed |= !ReferenceEquals(masked, kv.Value);
-            return new KeyValuePair<ScalarValue, LogEventPropertyValue>(kv.Key, masked);
-        }).ToList();
+            var masked = Mask(key.Value as string, value);
+            var changed = !ReferenceEquals(masked, value);
+            if (copy is null && changed)
+                copy = [.. dictionary.Elements.Take(index)];
+            copy?.Add(new KeyValuePair<ScalarValue, LogEventPropertyValue>(key, masked));
+            index++;
+        }
 
-        return changed ? new DictionaryValue(entries) : dictionary;
+        return copy is null ? dictionary : new DictionaryValue(copy);
+    }
+
+    /// <summary>
+    /// Maps <paramref name="items"/> and returns a new list only when some item changed
+    /// (by reference); returns <c>null</c>, allocating nothing, when none did.
+    /// </summary>
+    private static List<T>? CopyOnFirstChange<T>(IReadOnlyList<T> items, Func<T, T> map)
+        where T : class
+    {
+        List<T>? copy = null;
+        for (var i = 0; i < items.Count; i++)
+        {
+            var mapped = map(items[i]);
+            if (copy is null && ReferenceEquals(mapped, items[i])) continue;
+
+            copy ??= new List<T>(items.Take(i));
+            copy.Add(mapped);
+        }
+
+        return copy;
     }
 }

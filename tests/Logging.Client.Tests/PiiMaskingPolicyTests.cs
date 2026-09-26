@@ -77,12 +77,13 @@ public class PiiMaskingPolicyTests
     }
 
     [Fact]
-    public void MaskIfPii_PlainDigitPhone_MasksCorrectly()
+    public void MaskIfPii_PlainDigitsWithoutPlusOrSeparator_ReturnsUnchanged()
     {
+        // Tight rule (owner decision Q2 "PII rule"): an all-digit string is an order
+        // reference or id, not a phone, unless it starts with + or has separators.
         var result = PiiMaskingPolicy.MaskIfPii("2345678901");
 
-        result.Should().EndWith("8901");
-        result.Should().Contain("***");
+        result.Should().Be("2345678901");
     }
 
     // ===== Non-PII Preservation =====
