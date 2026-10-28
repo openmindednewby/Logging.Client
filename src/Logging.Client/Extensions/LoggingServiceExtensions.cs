@@ -42,6 +42,7 @@ public static class LoggingServiceExtensions
         // over the code-supplied value, matching the LokiQueueLimit precedent below.
         BindSinkType(builder.Configuration, options);
         BindLokiUrl(builder.Configuration, options);
+        ConsoleSink.BindFormat(builder.Configuration, options);
 
         // Allow operators to tune the Loki sink queue depth from appsettings
         // without recompiling.
@@ -92,16 +93,15 @@ public static class LoggingServiceExtensions
             .Enrich.WithMachineName()
             .Enrich.WithProperty("ServiceName", options.ServiceName)
             .Enrich.WithProperty("Environment", environment)
-            .Enrich.With<CorrelationIdEnricher>();
+            .Enrich.With<CorrelationIdEnricher>()
+            .Enrich.With<TraceContextEnricher>();
 
         // Enricher, not a destructuring policy: Serilog never offers strings to an
         // IDestructuringPolicy. Registered last so it also masks what earlier enrichers added.
         if (options.EnablePiiMasking)
             configuration.Enrich.With<PiiMaskingEnricher>();
 
-        // Console sink for local visibility and Promtail scraping; off only for None.
-        if (WritesToConsole(options))
-            configuration.WriteTo.Console(outputTemplate: options.ConsoleTemplate);
+        ConsoleSink.Configure(configuration, options, environment);
 
         ConfigureSink(configuration, options, environment);
 

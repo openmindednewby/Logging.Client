@@ -66,6 +66,11 @@ public sealed class LoggingOptions
         "[{Timestamp:HH:mm:ss} {Level:u3}] [{ServiceName}] [{CorrelationId}] {Message:lj} {Properties:j}{NewLine}{Exception}";
 
     /// <summary>
+    /// Console rendering; null means Text in Development and Json elsewhere. Override via <c>Logging:ConsoleFormat</c>.
+    /// </summary>
+    public ConsoleLogFormat? ConsoleFormat { get; set; }
+
+    /// <summary>
     /// The Sentry DSN for error monitoring. When empty, Sentry is disabled.
     /// </summary>
     public string SentryDsn { get; set; } = string.Empty;
