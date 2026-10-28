@@ -100,4 +100,19 @@ public sealed class LoggingOptions
     /// Override via the <c>Sentry:TracesSampleRate</c> config key or <c>SENTRY_TRACES_SAMPLE_RATE</c> env var.
     /// </summary>
     public double SentryTracesSampleRate { get; set; }
+
+    /// <summary>
+    /// The default minimum level. Override via <c>Serilog:MinimumLevel:Default</c>.
+    /// </summary>
+    public LogEventLevel MinimumLevel { get; set; } = LogEventLevel.Information;
+
+    /// <summary>
+    /// Per-source minimum levels. Config <c>Serilog:MinimumLevel:Override:&lt;source&gt;</c> adds or replaces entries.
+    /// </summary>
+    public IDictionary<string, LogEventLevel> MinimumLevelOverrides { get; } = new Dictionary<string, LogEventLevel>
+    {
+        ["Microsoft"] = LogEventLevel.Warning,
+        ["Microsoft.Hosting.Lifetime"] = LogEventLevel.Information,
+        ["System"] = LogEventLevel.Warning,
+    };
 }

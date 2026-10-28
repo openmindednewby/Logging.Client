@@ -43,6 +43,7 @@ public static class LoggingServiceExtensions
         BindSinkType(builder.Configuration, options);
         BindLokiUrl(builder.Configuration, options);
         ConsoleSink.BindFormat(builder.Configuration, options);
+        MinimumLevels.Bind(builder.Configuration, options);
 
         // Allow operators to tune the Loki sink queue depth from appsettings
         // without recompiling.
@@ -84,11 +85,7 @@ public static class LoggingServiceExtensions
         LoggingOptions options,
         string environment)
     {
-        var configuration = new LoggerConfiguration()
-            .MinimumLevel.Information()
-            .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-            .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Information)
-            .MinimumLevel.Override("System", LogEventLevel.Warning)
+        var configuration = MinimumLevels.Apply(new LoggerConfiguration(), options)
             .Enrich.FromLogContext()
             .Enrich.WithMachineName()
             .Enrich.WithProperty("ServiceName", options.ServiceName)
