@@ -11,6 +11,8 @@ public sealed class TraceContextEnricher : ILogEventEnricher
 {
     public const string TraceIdPropertyName = "TraceId";
     public const string SpanIdPropertyName = "SpanId";
+    public const string W3CTraceIdPropertyName = "trace_id";
+    public const string W3CSpanIdPropertyName = "span_id";
 
     public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)
     {
@@ -19,5 +21,7 @@ public sealed class TraceContextEnricher : ILogEventEnricher
 
         logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty(TraceIdPropertyName, activity.TraceId.ToHexString()));
         logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty(SpanIdPropertyName, activity.SpanId.ToHexString()));
+        logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty(W3CTraceIdPropertyName, activity.TraceId.ToHexString()));
+        logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty(W3CSpanIdPropertyName, activity.SpanId.ToHexString()));
     }
 }

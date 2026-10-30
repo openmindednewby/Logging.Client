@@ -22,6 +22,19 @@ public class TraceContextAndConsoleFormatTests
     }
 
     [Fact]
+    public void CreateLoggerConfiguration_WithCurrentActivity_AddsSnakeCaseTraceIdAndSpanId()
+    {
+        using var activity = new Activity("probe").SetIdFormat(ActivityIdFormat.W3C).Start();
+        var expectedTraceId = activity.TraceId.ToHexString();
+        var expectedSpanId = activity.SpanId.ToHexString();
+
+        var logEvent = Capture(l => l.Information("traced"));
+
+        ((ScalarValue)logEvent.Properties["trace_id"]).Value.Should().Be(expectedTraceId);
+        ((ScalarValue)logEvent.Properties["span_id"]).Value.Should().Be(expectedSpanId);
+    }
+
+    [Fact]
     public void CreateLoggerConfiguration_WithoutCurrentActivity_AddsNoTraceId()
     {
         Activity.Current = null;

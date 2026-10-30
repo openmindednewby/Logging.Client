@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Logging.Client.Context;
 using Microsoft.AspNetCore.Http;
 using Serilog.Context;
@@ -5,8 +6,7 @@ using Serilog.Context;
 namespace Logging.Client.Middleware;
 
 /// <summary>
-/// Middleware that reads or generates a correlation ID from the X-Correlation-ID header
-/// and pushes it into <see cref="CorrelationIdContext"/> and Serilog's <see cref="LogContext"/>.
+/// Sets the correlation ID to the W3C trace id, else the X-Correlation-ID header or a new id, for logs and responses.
 /// </summary>
 public class CorrelationIdMiddleware
 {
@@ -14,6 +14,11 @@ public class CorrelationIdMiddleware
     /// The HTTP header name used for correlation ID propagation.
     /// </summary>
     public const string HeaderName = "X-Correlation-ID";
+
+    /// <summary>
+    /// Log property holding an inbound X-Correlation-ID; the trace id stays the correlation id.
+    /// </summary>
+    public const string InboundCorrelationIdPropertyName = "correlation_id";
 
     private readonly RequestDelegate _next;
 
@@ -30,19 +35,22 @@ public class CorrelationIdMiddleware
     /// </summary>
     public async Task InvokeAsync(HttpContext context)
     {
-        var correlationId = context.Request.Headers[HeaderName].FirstOrDefault()
-                            ?? Guid.NewGuid().ToString("N");
+        var inboundId = context.Request.Headers[HeaderName].FirstOrDefault();
+        var correlationId = CurrentTraceId() ?? inboundId ?? Guid.NewGuid().ToString("N");
 
-        // Store in AsyncLocal for access anywhere in the request pipeline
         CorrelationIdContext.Current = correlationId;
+        context.Response.Headers[HeaderName] = inboundId ?? correlationId;
 
-        // Add to response headers for downstream correlation
-        context.Response.Headers[HeaderName] = correlationId;
-
-        // Push to Serilog LogContext so all log entries include it
         using (LogContext.PushProperty("CorrelationId", correlationId))
+        using (PushInboundId(inboundId))
         {
             await _next(context);
         }
     }
+
+    private static string? CurrentTraceId() =>
+        Activity.Current is { IdFormat: ActivityIdFormat.W3C } activity ? activity.TraceId.ToHexString() : null;
+
+    private static IDisposable? PushInboundId(string? inboundId) =>
+        inboundId is null ? null : LogContext.PushProperty(InboundCorrelationIdPropertyName, inboundId);
 }
