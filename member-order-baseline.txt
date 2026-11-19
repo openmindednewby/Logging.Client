@@ -1,0 +1,2 @@
+src/Logging.Client/Extensions/LoggingServiceExtensions.cs 3
+src/Logging.Client/Masking/PiiMaskingPolicy.cs 4
