@@ -4,12 +4,7 @@ using Sentry;
 
 namespace Logging.Client.Middleware;
 
-/// <summary>
-/// Middleware that enriches the Sentry scope with the authenticated user's ID, tenant ID,
-/// and the current correlation ID. Reads the "sub" claim (user ID) and "tenant_id" claim
-/// from the JWT. Only opaque GUIDs are sent to Sentry; no PII (emails, names) is ever included.
-/// Must be placed after UseAuthentication() and UseAuthorization() in the pipeline.
-/// </summary>
+/// <summary>Enriches the Sentry scope with the user ID, tenant ID and correlation ID.</summary>
 public class SentryUserContextMiddleware
 {
     private const string SubClaimType = "sub";
@@ -25,10 +20,7 @@ public class SentryUserContextMiddleware
         _next = next;
     }
 
-    /// <summary>
-    /// Processes the HTTP request, setting the Sentry user scope from JWT claims
-    /// and attaching the correlation ID as a Sentry tag for cross-service tracing.
-    /// </summary>
+    /// <summary>Sets the Sentry user scope from JWT claims and tags the correlation ID.</summary>
     public async Task InvokeAsync(HttpContext context)
     {
         var user = context.User;
@@ -52,7 +44,6 @@ public class SentryUserContextMiddleware
         }
         else
         {
-            // Clear previous user context for unauthenticated requests
             SentrySdk.ConfigureScope(scope =>
             {
                 scope.User = new SentryUser();

@@ -10,12 +10,7 @@ using Serilog;
 
 namespace Logging.Client.Tests;
 
-/// <summary>
-/// OBS-1a "Make Metrics.Client / Logging.Client switchable": a consumer with no Loki and no
-/// Sentry (ProovID, a client without our observability stack) must be able to run the
-/// package console-only or fully off, selected by config, with correlation ids and PII
-/// masking still applied.
-/// </summary>
+/// <summary>OBS-1a: console-only or fully-off sinks by config keep correlation ids and PII masking.</summary>
 public class SinkSwitchTests
 {
     private const string FakeDsn = "https://public@example.invalid/1";
@@ -90,8 +85,6 @@ public class SinkSwitchTests
     [Fact]
     public void CreateLoggerConfiguration_NoneSink_EnrichesAndMasksExactlyLikeConsole()
     {
-        // Masking and enrichment are sink-independent: the None pipeline must produce the
-        // same event as the Console pipeline, with the email masked in both.
         var none = Capture(LogSinkType.None);
         var console = Capture(LogSinkType.Console);
 

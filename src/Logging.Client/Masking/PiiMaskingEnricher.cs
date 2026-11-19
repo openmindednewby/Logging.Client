@@ -3,21 +3,7 @@ using Serilog.Events;
 
 namespace Logging.Client.Masking;
 
-/// <summary>
-/// Masks PII in every bound property of a log event: string scalars that look like an email
-/// or phone number (see <see cref="PiiMaskingPolicy.LooksLikePhone"/>), the whole value of any
-/// property named in <see cref="SensitivePropertyNames"/>, and any phone-named property. Walks
-/// structures, sequences and dictionaries, so <c>{@Email}</c>, <c>{Email}</c> and a destructured
-/// object's nested members are all covered.
-/// </summary>
-/// <remarks>
-/// This is an enricher, not a destructuring policy, because Serilog converts strings with its
-/// built-in scalar conversion before any <see cref="IDestructuringPolicy"/> is consulted, so
-/// <see cref="PiiMaskingPolicy"/> is never offered a string. Enrichers run after binding and
-/// before sinks, so the rendered message and every sink (Console, Loki, Sentry) see masked values.
-/// Register it after all other enrichers. It runs on every event, so it allocates only when a
-/// value actually changes.
-/// </remarks>
+/// <summary>Masks emails, phone numbers and sensitive-named values in every log event property.</summary>
 public sealed class PiiMaskingEnricher : ILogEventEnricher
 {
     private const string Redacted = "***REDACTED***";
@@ -39,10 +25,6 @@ public sealed class PiiMaskingEnricher : ILogEventEnricher
             logEvent.AddOrUpdateProperty(property);
     }
 
-    /// <summary>
-    /// Returns a masked copy of <paramref name="value"/>, or the same instance when nothing
-    /// in it needed masking.
-    /// </summary>
     internal static LogEventPropertyValue Mask(string? name, LogEventPropertyValue value)
     {
         if (name is not null && SensitivePropertyNames.Names.Contains(name))
@@ -101,10 +83,6 @@ public sealed class PiiMaskingEnricher : ILogEventEnricher
         return copy is null ? dictionary : new DictionaryValue(copy);
     }
 
-    /// <summary>
-    /// Maps <paramref name="items"/> and returns a new list only when some item changed
-    /// (by reference); returns <c>null</c>, allocating nothing, when none did.
-    /// </summary>
     private static List<T>? CopyOnFirstChange<T>(IReadOnlyList<T> items, Func<T, T> map)
         where T : class
     {

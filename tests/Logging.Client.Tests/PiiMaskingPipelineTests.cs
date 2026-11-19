@@ -4,12 +4,7 @@ using Logging.Client.Extensions;
 
 namespace Logging.Client.Tests;
 
-/// <summary>
-/// Regression: PII masking must hold through the REAL configured Serilog pipeline, not only
-/// when the masker is called directly. Serilog converts strings with its built-in scalar
-/// policy before any IDestructuringPolicy runs, so a destructuring-policy-only masker never
-/// saw <c>{@Email}</c> or <c>{Email}</c>.
-/// </summary>
+/// <summary>PII masking holds through the real configured Serilog pipeline.</summary>
 public class PiiMaskingPipelineTests
 {
     private const string Email = "longusername@company.org";
@@ -45,7 +40,6 @@ public class PiiMaskingPipelineTests
         logEvent.RenderMessage().Should().NotContain("longusername");
     }
 
-    // OBS-1a-fix "Tight PII rule + lazy enricher" (owner decision Q2 "PII rule").
     [Theory]
     [InlineData("2026-09-26")]
     [InlineData("2026-09-26T10:00:00Z")]
@@ -103,7 +97,6 @@ public class PiiMaskingPipelineTests
         logEvent.Properties[name].ToString().Should().NotContain("12345").And.Contain("***");
     }
 
-    // "Tel" must be a whole word of the name, not a substring of another word.
     [Theory]
     [InlineData("Hotel")]
     [InlineData("TelemetryId")]

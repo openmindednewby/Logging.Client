@@ -7,8 +7,6 @@ public class PiiMaskingPolicyTests
 {
     private readonly PiiMaskingPolicy _policy = new();
 
-    // ===== Email Masking =====
-
     [Fact]
     public void MaskIfPii_StandardEmail_MasksMiddleCharacters()
     {
@@ -46,8 +44,6 @@ public class PiiMaskingPolicyTests
         result.Should().Contain("@company.org");
     }
 
-    // ===== Phone Masking =====
-
     [Fact]
     public void MaskIfPii_UsPhoneWithDashes_ShowsLastFourDigitsOnly()
     {
@@ -79,14 +75,10 @@ public class PiiMaskingPolicyTests
     [Fact]
     public void MaskIfPii_PlainDigitsWithoutPlusOrSeparator_ReturnsUnchanged()
     {
-        // Tight rule (owner decision Q2 "PII rule"): an all-digit string is an order
-        // reference or id, not a phone, unless it starts with + or has separators.
         var result = PiiMaskingPolicy.MaskIfPii("2345678901");
 
         result.Should().Be("2345678901");
     }
-
-    // ===== Non-PII Preservation =====
 
     [Fact]
     public void MaskIfPii_RegularString_ReturnsUnchanged()
@@ -131,8 +123,6 @@ public class PiiMaskingPolicyTests
         result.Should().Be(ip);
     }
 
-    // ===== Sensitive Property Names =====
-
     [Theory]
     [InlineData("Password")]
     [InlineData("password")]
@@ -160,7 +150,6 @@ public class PiiMaskingPolicyTests
     {
         var result = PiiMaskingPolicy.MaskSensitiveProperty("Email", "user@test.com");
 
-        // Should mask the email, not redact based on property name
         result.Should().NotBe("user@test.com");
         result.Should().Contain("@test.com");
     }
@@ -172,8 +161,6 @@ public class PiiMaskingPolicyTests
 
         result.Should().Be("ORD-12345");
     }
-
-    // ===== IDestructuringPolicy Interface =====
 
     [Fact]
     public void TryDestructure_NonStringValue_ReturnsFalse()
@@ -206,12 +193,9 @@ public class PiiMaskingPolicyTests
         result.Should().BeNull();
     }
 
-    // ===== Edge Cases =====
-
     [Fact]
     public void MaskIfPii_ShortPhoneNumber_ReturnsUnchanged()
     {
-        // Less than 7 chars, should not match phone pattern
         var result = PiiMaskingPolicy.MaskIfPii("1234");
 
         result.Should().Be("1234");
@@ -225,8 +209,6 @@ public class PiiMaskingPolicyTests
         result.Should().NotBe("user+tag@gmail.com");
         result.Should().Contain("@gmail.com");
     }
-
-    // ===== Stress: PII Masking Under Load =====
 
     [Fact]
     public void MaskIfPii_ConcurrentCalls_ThreadSafe()
@@ -264,9 +246,6 @@ public class PiiMaskingPolicyTests
         results.Should().AllBe("***REDACTED***");
     }
 
-    /// <summary>
-    /// Minimal mock for ILogEventPropertyValueFactory.
-    /// </summary>
     private sealed class MockPropertyValueFactory : ILogEventPropertyValueFactory
     {
         public LogEventPropertyValue CreatePropertyValue(object? value, bool destructureObjects = false)

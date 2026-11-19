@@ -3,10 +3,7 @@ using Logging.Client.Diagnostics;
 
 namespace Logging.Client.Tests;
 
-/// <summary>
-/// Decision-logic tests for the Loki startup guard. The DNS resolver is always injected —
-/// no test here performs a real lookup, so the suite has no network dependency.
-/// </summary>
+/// <summary>Decision-logic tests for the Loki startup guard.</summary>
 public class LokiEndpointGuardTests
 {
     private static readonly Func<string, bool> AlwaysResolves = _ => true;
@@ -15,7 +12,6 @@ public class LokiEndpointGuardTests
     [Fact]
     public void ResolveEffectiveSinkType_LokiHostUnresolvable_FallsBackToConsole()
     {
-        // Arrange
         var options = new LoggingOptions
         {
             SinkType = LogSinkType.Loki,
@@ -23,10 +19,8 @@ public class LokiEndpointGuardTests
         };
         var warnings = new List<string>();
 
-        // Act
         var effective = LokiEndpointGuard.ResolveEffectiveSinkType(options, NeverResolves, warnings.Add);
 
-        // Assert
         effective.Should().Be(LogSinkType.Console);
         warnings.Should().ContainSingle();
         warnings[0].Should().Contain("LOKI SINK DISABLED");
@@ -36,7 +30,6 @@ public class LokiEndpointGuardTests
     [Fact]
     public void ResolveEffectiveSinkType_LokiHostResolves_KeepsLokiAndDoesNotWarn()
     {
-        // Arrange
         var options = new LoggingOptions
         {
             SinkType = LogSinkType.Loki,
@@ -44,10 +37,8 @@ public class LokiEndpointGuardTests
         };
         var warnings = new List<string>();
 
-        // Act
         var effective = LokiEndpointGuard.ResolveEffectiveSinkType(options, AlwaysResolves, warnings.Add);
 
-        // Assert
         effective.Should().Be(LogSinkType.Loki);
         warnings.Should().BeEmpty();
     }
@@ -55,12 +46,10 @@ public class LokiEndpointGuardTests
     [Fact]
     public void ResolveEffectiveSinkType_ConsoleSinkType_NeverProbesDns()
     {
-        // Arrange
         var options = new LoggingOptions { SinkType = LogSinkType.Console };
         var probedHosts = new List<string>();
         var warnings = new List<string>();
 
-        // Act
         var effective = LokiEndpointGuard.ResolveEffectiveSinkType(
             options,
             host =>
@@ -70,7 +59,6 @@ public class LokiEndpointGuardTests
             },
             warnings.Add);
 
-        // Assert
         effective.Should().Be(LogSinkType.Console);
         probedHosts.Should().BeEmpty();
         warnings.Should().BeEmpty();
@@ -83,14 +71,11 @@ public class LokiEndpointGuardTests
     [InlineData("loki.monitoring.svc.cluster.local:3100")]
     public void ResolveEffectiveSinkType_MalformedLokiUrl_FallsBackToConsole(string lokiUrl)
     {
-        // Arrange
         var options = new LoggingOptions { SinkType = LogSinkType.Loki, LokiUrl = lokiUrl };
         var warnings = new List<string>();
 
-        // Act — even a resolver that says "yes" cannot rescue an unparseable URL
         var effective = LokiEndpointGuard.ResolveEffectiveSinkType(options, AlwaysResolves, warnings.Add);
 
-        // Assert
         effective.Should().Be(LogSinkType.Console);
         warnings.Should().ContainSingle();
     }
@@ -98,15 +83,12 @@ public class LokiEndpointGuardTests
     [Fact]
     public void ResolveEffectiveSinkType_ResolverThrows_FallsBackToConsoleWithoutThrowing()
     {
-        // Arrange
         var options = new LoggingOptions { SinkType = LogSinkType.Loki, LokiUrl = "http://loki:3100" };
         var warnings = new List<string>();
         Func<string, bool> throwingResolver = _ => throw new InvalidOperationException("resolver exploded");
 
-        // Act
         var act = () => LokiEndpointGuard.ResolveEffectiveSinkType(options, throwingResolver, warnings.Add);
 
-        // Assert — a logging package must never prevent a service from booting
         act.Should().NotThrow().Which.Should().Be(LogSinkType.Console);
     }
 
@@ -132,7 +114,6 @@ public class LokiEndpointGuardTests
     [Fact]
     public void HostResolves_IpLiteral_ShortCircuitsWithoutDnsLookup()
     {
-        // A dotted quad needs no resolution; a zero timeout proves no lookup is attempted.
         LokiEndpointGuard.HostResolves("10.0.0.2", TimeSpan.Zero).Should().BeTrue();
     }
 

@@ -15,50 +15,39 @@ public class CorrelationIdEnricherTests
     [Fact]
     public void Enrich_WithCorrelationId_AddsProperty()
     {
-        // Arrange
         const string correlationId = "test-corr-123";
         CorrelationIdContext.Current = correlationId;
         var logEvent = CreateLogEvent();
 
-        // Act
         _enricher.Enrich(logEvent, new TestPropertyFactory());
 
-        // Assert
         logEvent.Properties.Should().ContainKey("CorrelationId");
         logEvent.Properties["CorrelationId"].ToString().Should().Contain(correlationId);
 
-        // Cleanup
         CorrelationIdContext.Current = null;
     }
 
     [Fact]
     public void Enrich_WithoutCorrelationId_DoesNotAddProperty()
     {
-        // Arrange
         CorrelationIdContext.Current = null;
         var logEvent = CreateLogEvent();
 
-        // Act
         _enricher.Enrich(logEvent, new TestPropertyFactory());
 
-        // Assert
         logEvent.Properties.Should().NotContainKey("CorrelationId");
     }
 
     [Fact]
     public void Enrich_EmptyCorrelationId_DoesNotAddProperty()
     {
-        // Arrange
         CorrelationIdContext.Current = "";
         var logEvent = CreateLogEvent();
 
-        // Act
         _enricher.Enrich(logEvent, new TestPropertyFactory());
 
-        // Assert
         logEvent.Properties.Should().NotContainKey("CorrelationId");
 
-        // Cleanup
         CorrelationIdContext.Current = null;
     }
 

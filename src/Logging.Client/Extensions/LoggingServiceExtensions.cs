@@ -16,20 +16,12 @@ using Serilog.Sinks.Grafana.Loki;
 
 namespace Logging.Client.Extensions;
 
-/// <summary>
-/// Extension methods for configuring structured logging with Serilog, Grafana Loki,
-/// PII masking, Sentry error monitoring, and contextual enrichers.
-/// </summary>
+/// <summary>Extension methods for structured logging with Serilog, Loki, PII masking and Sentry.</summary>
 public static class LoggingServiceExtensions
 {
-    /// <summary>
-    /// Adds structured logging to the application with Serilog, enrichers, and the configured sink.
-    /// When a Sentry DSN is provided (via config or environment variable), the full Sentry SDK is
-    /// initialized with performance monitoring (tracing) and the Serilog sink for error capture.
-    /// </summary>
+    /// <summary>Adds structured logging to the application with Serilog, enrichers, and the configured sink.</summary>
     /// <param name="builder">The web application builder.</param>
     /// <param name="configure">Action to configure logging options.</param>
-    /// <returns>The builder for chaining.</returns>
     public static WebApplicationBuilder AddStructuredLogging(
         this WebApplicationBuilder builder,
         Action<LoggingOptions> configure)
@@ -37,26 +29,18 @@ public static class LoggingServiceExtensions
         var options = new LoggingOptions();
         configure(options);
 
-        // Allow operators to select the sink and point it somewhere from appsettings /
-        // environment (Logging__SinkType, Logging__LokiUrl) without recompiling. Config wins
-        // over the code-supplied value, matching the LokiQueueLimit precedent below.
         BindSinkType(builder.Configuration, options);
         BindLokiUrl(builder.Configuration, options);
         ConsoleSink.BindFormat(builder.Configuration, options);
         MinimumLevels.Bind(builder.Configuration, options);
 
-        // Allow operators to tune the Loki sink queue depth from appsettings
-        // without recompiling.
         BindLokiQueueLimit(builder.Configuration, options);
 
-        // Startup guard: never register a buffering Loki sink against an endpoint that
-        // cannot be reached. See LokiEndpointGuard for why this is a leak, not an outage.
         options.SinkType = LokiEndpointGuard.ResolveEffectiveSinkType(
             options,
             LokiEndpointGuard.DnsHostResolver,
             LokiEndpointGuard.WriteStartupWarning);
 
-        // Bind Sentry config from appsettings if present
         var sentrySection = builder.Configuration.GetSection("Sentry");
         BindSentryConfiguration(sentrySection, options);
 
@@ -67,20 +51,13 @@ public static class LoggingServiceExtensions
         Log.Logger = configuration.CreateLogger();
         builder.Host.UseSerilog();
 
-        // Initialize full Sentry SDK for performance monitoring and breadcrumbs
         ConfigureSentrySdk(builder, options, environment);
 
-        // Register HTTP context accessor for enrichers
         builder.Services.AddHttpContextAccessor();
 
         return builder;
     }
 
-    /// <summary>
-    /// Builds the Serilog pipeline: enrichers (service, environment, correlation id), PII
-    /// masking, the console sink unless <see cref="LogSinkType.None"/>, the primary sink and
-    /// the Sentry sink when active.
-    /// </summary>
     internal static LoggerConfiguration CreateLoggerConfiguration(
         LoggingOptions options,
         string environment)
@@ -93,8 +70,6 @@ public static class LoggingServiceExtensions
             .Enrich.With<CorrelationIdEnricher>()
             .Enrich.With<TraceContextEnricher>();
 
-        // Enricher, not a destructuring policy: Serilog never offers strings to an
-        // IDestructuringPolicy. Registered last so it also masks what earlier enrichers added.
         if (options.EnablePiiMasking)
             configuration.Enrich.With<PiiMaskingEnricher>();
 
@@ -102,47 +77,29 @@ public static class LoggingServiceExtensions
 
         ConfigureSink(configuration, options, environment);
 
-        // Sentry Serilog sink runs alongside the primary sink, not instead of it.
         ConfigureSentrySink(configuration, options);
 
         return configuration;
     }
 
-    /// <summary>
-    /// Whether the console sink is registered. True for every sink type except
-    /// <see cref="LogSinkType.None"/>.
-    /// </summary>
     internal static bool WritesToConsole(LoggingOptions options) =>
         options.SinkType != LogSinkType.None;
 
-    /// <summary>
-    /// Whether Sentry is wired: a DSN is configured and <see cref="LoggingOptions.SentryEnabled"/>
-    /// has not switched it off.
-    /// </summary>
     internal static bool IsSentryActive(LoggingOptions options) =>
         options.SentryEnabled && !string.IsNullOrEmpty(options.SentryDsn);
 
-    /// <summary>
-    /// Adds the correlation ID middleware to the application pipeline.
-    /// Should be called early in the middleware pipeline, before UseRequestLogging().
-    /// </summary>
+    /// <summary>Adds the correlation ID middleware to the application pipeline.</summary>
     public static IApplicationBuilder UseCorrelationIdMiddleware(this IApplicationBuilder app)
     {
         return app.UseMiddleware<CorrelationIdMiddleware>();
     }
 
-    /// <summary>
-    /// Adds the Sentry user context middleware to the application pipeline.
-    /// Should be called after UseAuthentication() and UseAuthorization().
-    /// </summary>
+    /// <summary>Adds the Sentry user context middleware to the application pipeline.</summary>
     public static IApplicationBuilder UseSentryUserContext(this IApplicationBuilder app)
     {
         return app.UseMiddleware<SentryUserContextMiddleware>();
     }
 
-    /// <summary>
-    /// Configures the Serilog log sink based on the LogSinkType option.
-    /// </summary>
     internal static void ConfigureSink(
         LoggerConfiguration configuration,
         LoggingOptions options,
@@ -151,8 +108,6 @@ public static class LoggingServiceExtensions
         switch (options.SinkType)
         {
             case LogSinkType.Loki:
-                // queueLimit bounds the in-memory buffer so a stuck Loki endpoint
-                // (DNS failure, rate limit, downtime) cannot leak the heap.
                 configuration.WriteTo.GrafanaLoki(
                     options.LokiUrl,
                     labels: new[]
@@ -166,20 +121,13 @@ public static class LoggingServiceExtensions
 
             case LogSinkType.Console:
             case LogSinkType.None:
-                // Console handled by CreateLoggerConfiguration; None registers nothing.
                 break;
 
             default:
-                // Future sink types will be added here
                 break;
         }
     }
 
-    /// <summary>
-    /// Configures the Sentry Serilog sink when a DSN is provided.
-    /// Sentry only receives events at or above the configured minimum level (default: Error).
-    /// GDPR: SendDefaultPii is always false; only opaque IDs are sent.
-    /// </summary>
     internal static void ConfigureSentrySink(
         LoggerConfiguration configuration,
         LoggingOptions options)
@@ -196,12 +144,6 @@ public static class LoggingServiceExtensions
         });
     }
 
-    /// <summary>
-    /// Initializes the full Sentry SDK via <c>UseSentry()</c> on the web host builder.
-    /// This enables performance monitoring (transaction tracing), automatic breadcrumb capture,
-    /// and request/response context. The Serilog sink handles error-level events separately.
-    /// No-op when <see cref="LoggingOptions.SentryDsn"/> is empty or Sentry is switched off.
-    /// </summary>
     internal static void ConfigureSentrySdk(
         WebApplicationBuilder builder,
         LoggingOptions options,
@@ -218,7 +160,6 @@ public static class LoggingServiceExtensions
             o.TracesSampleRate = options.SentryTracesSampleRate;
             o.AutoSessionTracking = true;
 
-            // Attach correlation ID to every Sentry event as a tag
             o.SetBeforeSend((sentryEvent, _) =>
             {
                 var correlationId = CorrelationIdContext.Current;
@@ -230,10 +171,6 @@ public static class LoggingServiceExtensions
         });
     }
 
-    /// <summary>
-    /// Binds Sentry configuration values from the <c>Sentry</c> configuration section.
-    /// Reads Enabled, Dsn, Environment, MinimumEventLevel, and TracesSampleRate.
-    /// </summary>
     internal static void BindSentryConfiguration(
         IConfigurationSection sentrySection,
         LoggingOptions options)
@@ -259,12 +196,6 @@ public static class LoggingServiceExtensions
             options.SentryTracesSampleRate = Math.Clamp(rate, 0.0, 1.0);
     }
 
-    /// <summary>
-    /// Reads <c>Logging:SinkType</c> from configuration and applies it to the options when
-    /// the value names a known <see cref="LogSinkType"/>. This is what makes the documented
-    /// <c>Logging__SinkType=Loki</c> opt-in real — without it the setting would be inert.
-    /// Unknown or missing values leave the existing value in place.
-    /// </summary>
     internal static void BindSinkType(
         IConfiguration configuration,
         LoggingOptions options)
@@ -275,10 +206,6 @@ public static class LoggingServiceExtensions
             options.SinkType = parsed;
     }
 
-    /// <summary>
-    /// Reads <c>Logging:LokiUrl</c> from configuration and applies it to the options when a
-    /// non-empty value is present. Missing values leave the existing value in place.
-    /// </summary>
     internal static void BindLokiUrl(
         IConfiguration configuration,
         LoggingOptions options)
@@ -288,11 +215,6 @@ public static class LoggingServiceExtensions
             options.LokiUrl = value;
     }
 
-    /// <summary>
-    /// Reads <c>Logging:LokiQueueLimit</c> from configuration and applies it to
-    /// the options when the value is a positive integer. Invalid or missing
-    /// values leave the existing default in place.
-    /// </summary>
     internal static void BindLokiQueueLimit(
         IConfiguration configuration,
         LoggingOptions options)

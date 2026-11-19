@@ -4,10 +4,7 @@ using Serilog.Events;
 
 namespace Logging.Client.Enrichers;
 
-/// <summary>
-/// Enriches log events with the current tenant ID.
-/// Attempts to resolve from ICurrentTenantService first, then falls back to JWT "tenant_id" claim.
-/// </summary>
+/// <summary>Enriches log events with the current tenant ID.</summary>
 public class TenantEnricher : ILogEventEnricher
 {
     /// <summary>
@@ -44,7 +41,6 @@ public class TenantEnricher : ILogEventEnricher
         var httpContext = _httpContextAccessor.HttpContext;
         if (httpContext == null) return null;
 
-        // Try to resolve from ICurrentTenantService via DI
         var serviceType = Type.GetType("MultiTenancy.Abstractions.ICurrentTenantService, MultiTenancy.EntityFrameworkCore");
         var tenantService = serviceType != null
             ? httpContext.RequestServices?.GetService(serviceType)
@@ -57,7 +53,6 @@ public class TenantEnricher : ILogEventEnricher
             if (tenantIdValue != null) return tenantIdValue.ToString();
         }
 
-        // Fallback: read from JWT claims
         var tenantClaim = httpContext.User?.FindFirst(TenantClaimType);
         return tenantClaim?.Value;
     }

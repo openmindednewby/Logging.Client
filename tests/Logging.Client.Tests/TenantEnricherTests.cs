@@ -14,16 +14,13 @@ public class TenantEnricherTests
     [Fact]
     public void Enrich_WithTenantClaim_AddsTenantIdProperty()
     {
-        // Arrange
         var tenantId = Guid.NewGuid().ToString();
         var httpContext = CreateHttpContextWithClaims(("tenant_id", tenantId));
         var enricher = CreateEnricher(httpContext);
         var logEvent = CreateLogEvent();
 
-        // Act
         enricher.Enrich(logEvent, new LogEventPropertyFactory());
 
-        // Assert
         logEvent.Properties.Should().ContainKey("TenantId");
         logEvent.Properties["TenantId"].ToString().Should().Contain(tenantId);
     }
@@ -31,68 +28,54 @@ public class TenantEnricherTests
     [Fact]
     public void Enrich_NoHttpContext_DoesNotAddProperty()
     {
-        // Arrange
         var accessor = new Mock<IHttpContextAccessor>();
         accessor.Setup(a => a.HttpContext).Returns((HttpContext?)null);
 
         var enricher = new TenantEnricher(accessor.Object);
         var logEvent = CreateLogEvent();
 
-        // Act
         enricher.Enrich(logEvent, new LogEventPropertyFactory());
 
-        // Assert
         logEvent.Properties.Should().NotContainKey("TenantId");
     }
 
     [Fact]
     public void Enrich_NoTenantClaim_DoesNotAddProperty()
     {
-        // Arrange
         var httpContext = CreateHttpContextWithClaims(("sub", "user-123"));
         var enricher = CreateEnricher(httpContext);
         var logEvent = CreateLogEvent();
 
-        // Act
         enricher.Enrich(logEvent, new LogEventPropertyFactory());
 
-        // Assert
         logEvent.Properties.Should().NotContainKey("TenantId");
     }
 
     [Fact]
     public void Enrich_NullUser_DoesNotAddProperty()
     {
-        // Arrange
         var httpContext = new DefaultHttpContext();
-        // User is null by default on DefaultHttpContext unless claims are set
         var enricher = CreateEnricher(httpContext);
         var logEvent = CreateLogEvent();
 
-        // Act
         enricher.Enrich(logEvent, new LogEventPropertyFactory());
 
-        // Assert
         logEvent.Properties.Should().NotContainKey("TenantId");
     }
 
     [Fact]
     public void Enrich_DoesNotOverwriteExistingProperty()
     {
-        // Arrange
         var tenantId = Guid.NewGuid().ToString();
         var httpContext = CreateHttpContextWithClaims(("tenant_id", tenantId));
         var enricher = CreateEnricher(httpContext);
         var logEvent = CreateLogEvent();
 
-        // Pre-add a TenantId property
         var existingProp = new LogEventProperty("TenantId", new ScalarValue("existing-tenant"));
         logEvent.AddPropertyIfAbsent(existingProp);
 
-        // Act
         enricher.Enrich(logEvent, new LogEventPropertyFactory());
 
-        // Assert
         logEvent.Properties["TenantId"].ToString().Should().Contain("existing-tenant");
     }
 
@@ -127,9 +110,6 @@ public class TenantEnricherTests
             Array.Empty<LogEventProperty>());
     }
 
-    /// <summary>
-    /// Simple property factory for test purposes.
-    /// </summary>
     private sealed class LogEventPropertyFactory : ILogEventPropertyFactory
     {
         public LogEventProperty CreateProperty(string name, object? value, bool destructureObjects = false)

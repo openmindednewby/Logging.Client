@@ -10,7 +10,6 @@ public class SentryUserContextMiddlewareTests
     [Fact]
     public async Task InvokeAsync_AuthenticatedUser_CallsNextMiddleware()
     {
-        // Arrange
         var nextCalled = false;
         var middleware = new SentryUserContextMiddleware(next: _ =>
         {
@@ -20,17 +19,14 @@ public class SentryUserContextMiddlewareTests
 
         var httpContext = CreateAuthenticatedContext("user-123", "tenant-456");
 
-        // Act
         await middleware.InvokeAsync(httpContext);
 
-        // Assert
         nextCalled.Should().BeTrue();
     }
 
     [Fact]
     public async Task InvokeAsync_UnauthenticatedUser_CallsNextMiddleware()
     {
-        // Arrange
         var nextCalled = false;
         var middleware = new SentryUserContextMiddleware(next: _ =>
         {
@@ -40,21 +36,17 @@ public class SentryUserContextMiddlewareTests
 
         var httpContext = new DefaultHttpContext();
 
-        // Act
         await middleware.InvokeAsync(httpContext);
 
-        // Assert
         nextCalled.Should().BeTrue();
     }
 
     [Fact]
     public async Task InvokeAsync_AuthenticatedUserWithClaims_DoesNotThrow()
     {
-        // Arrange
         var middleware = new SentryUserContextMiddleware(next: _ => Task.CompletedTask);
         var httpContext = CreateAuthenticatedContext("user-guid-abc", "tenant-guid-xyz");
 
-        // Act & Assert - should not throw even without Sentry SDK initialized
         var act = async () => await middleware.InvokeAsync(httpContext);
         await act.Should().NotThrowAsync();
     }
@@ -62,11 +54,9 @@ public class SentryUserContextMiddlewareTests
     [Fact]
     public async Task InvokeAsync_AuthenticatedUserWithoutTenantClaim_DoesNotThrow()
     {
-        // Arrange
         var middleware = new SentryUserContextMiddleware(next: _ => Task.CompletedTask);
         var httpContext = CreateAuthenticatedContext("user-guid-abc", tenantId: null);
 
-        // Act & Assert
         var act = async () => await middleware.InvokeAsync(httpContext);
         await act.Should().NotThrowAsync();
     }
@@ -74,11 +64,9 @@ public class SentryUserContextMiddlewareTests
     [Fact]
     public async Task InvokeAsync_AuthenticatedUserWithoutSubClaim_DoesNotThrow()
     {
-        // Arrange
         var middleware = new SentryUserContextMiddleware(next: _ => Task.CompletedTask);
         var httpContext = CreateAuthenticatedContext(userId: null, tenantId: "tenant-456");
 
-        // Act & Assert
         var act = async () => await middleware.InvokeAsync(httpContext);
         await act.Should().NotThrowAsync();
     }
@@ -86,11 +74,9 @@ public class SentryUserContextMiddlewareTests
     [Fact]
     public async Task InvokeAsync_UnauthenticatedUser_DoesNotThrow()
     {
-        // Arrange
         var middleware = new SentryUserContextMiddleware(next: _ => Task.CompletedTask);
         var httpContext = new DefaultHttpContext();
 
-        // Act & Assert - clears scope without throwing
         var act = async () => await middleware.InvokeAsync(httpContext);
         await act.Should().NotThrowAsync();
     }
@@ -98,7 +84,6 @@ public class SentryUserContextMiddlewareTests
     [Fact]
     public async Task InvokeAsync_ConcurrentRequests_EachProcessedIndependently()
     {
-        // Arrange
         const int requestCount = 50;
         var processedCount = 0;
 
@@ -108,7 +93,6 @@ public class SentryUserContextMiddlewareTests
             return Task.CompletedTask;
         });
 
-        // Act
         var tasks = Enumerable.Range(0, requestCount).Select(i =>
         {
             var httpContext = CreateAuthenticatedContext($"user-{i}", $"tenant-{i}");
@@ -117,19 +101,15 @@ public class SentryUserContextMiddlewareTests
 
         await Task.WhenAll(tasks);
 
-        // Assert
         processedCount.Should().Be(requestCount);
     }
 
     [Fact]
     public async Task InvokeAsync_NullUserIdentity_DoesNotThrow()
     {
-        // Arrange
         var middleware = new SentryUserContextMiddleware(next: _ => Task.CompletedTask);
         var httpContext = new DefaultHttpContext();
-        // DefaultHttpContext has User with non-authenticated identity by default
 
-        // Act & Assert
         var act = async () => await middleware.InvokeAsync(httpContext);
         await act.Should().NotThrowAsync();
     }
@@ -137,16 +117,13 @@ public class SentryUserContextMiddlewareTests
     [Fact]
     public async Task InvokeAsync_WithCorrelationId_DoesNotThrow()
     {
-        // Arrange
         var middleware = new SentryUserContextMiddleware(next: _ => Task.CompletedTask);
         var httpContext = CreateAuthenticatedContext("user-123", "tenant-456");
 
-        // Set a correlation ID in the async-local context
         CorrelationIdContext.Current = "test-correlation-id-abc";
 
         try
         {
-            // Act & Assert - should set correlation ID tag without throwing
             var act = async () => await middleware.InvokeAsync(httpContext);
             await act.Should().NotThrowAsync();
         }
@@ -159,14 +136,11 @@ public class SentryUserContextMiddlewareTests
     [Fact]
     public async Task InvokeAsync_WithoutCorrelationId_DoesNotThrow()
     {
-        // Arrange
         var middleware = new SentryUserContextMiddleware(next: _ => Task.CompletedTask);
         var httpContext = CreateAuthenticatedContext("user-123", "tenant-456");
 
-        // Ensure no correlation ID is set
         CorrelationIdContext.Current = null;
 
-        // Act & Assert - should handle null correlation ID gracefully
         var act = async () => await middleware.InvokeAsync(httpContext);
         await act.Should().NotThrowAsync();
     }
@@ -174,16 +148,13 @@ public class SentryUserContextMiddlewareTests
     [Fact]
     public async Task InvokeAsync_UnauthenticatedWithCorrelationId_DoesNotThrow()
     {
-        // Arrange
         var middleware = new SentryUserContextMiddleware(next: _ => Task.CompletedTask);
         var httpContext = new DefaultHttpContext();
 
-        // Set a correlation ID even for unauthenticated requests
         CorrelationIdContext.Current = "anon-correlation-id";
 
         try
         {
-            // Act & Assert - correlation ID should be set regardless of auth state
             var act = async () => await middleware.InvokeAsync(httpContext);
             await act.Should().NotThrowAsync();
         }

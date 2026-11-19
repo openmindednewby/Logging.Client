@@ -14,16 +14,13 @@ public class UserContextEnricherTests
     [Fact]
     public void Enrich_WithSubClaim_AddsUserIdProperty()
     {
-        // Arrange
         const string userId = "user-abc-123";
         var httpContext = CreateHttpContextWithClaims(("sub", userId));
         var enricher = CreateEnricher(httpContext);
         var logEvent = CreateLogEvent();
 
-        // Act
         enricher.Enrich(logEvent, new TestPropertyFactory());
 
-        // Assert
         logEvent.Properties.Should().ContainKey("UserId");
         logEvent.Properties["UserId"].ToString().Should().Contain(userId);
     }
@@ -31,31 +28,25 @@ public class UserContextEnricherTests
     [Fact]
     public void Enrich_NoSubClaim_DoesNotAddProperty()
     {
-        // Arrange
         var httpContext = CreateHttpContextWithClaims(("tenant_id", "t-123"));
         var enricher = CreateEnricher(httpContext);
         var logEvent = CreateLogEvent();
 
-        // Act
         enricher.Enrich(logEvent, new TestPropertyFactory());
 
-        // Assert
         logEvent.Properties.Should().NotContainKey("UserId");
     }
 
     [Fact]
     public void Enrich_NoHttpContext_DoesNotAddProperty()
     {
-        // Arrange
         var accessor = new Mock<IHttpContextAccessor>();
         accessor.Setup(a => a.HttpContext).Returns((HttpContext?)null);
         var enricher = new UserContextEnricher(accessor.Object);
         var logEvent = CreateLogEvent();
 
-        // Act
         enricher.Enrich(logEvent, new TestPropertyFactory());
 
-        // Assert
         logEvent.Properties.Should().NotContainKey("UserId");
     }
 
