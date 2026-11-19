@@ -9,7 +9,7 @@ namespace Logging.Client.Tests;
 public class LoggingServiceExtensionsTests
 {
     [Fact]
-    public void ConfigureSink_LokiSinkType_ConfiguresWithoutException()
+    public void ConfigureSink_WithLokiSinkType_ConfiguresWithoutException()
     {
         var configuration = new LoggerConfiguration()
             .MinimumLevel.Information()
@@ -27,7 +27,7 @@ public class LoggingServiceExtensionsTests
     }
 
     [Fact]
-    public void ConfigureSink_ConsoleSinkType_ConfiguresWithoutException()
+    public void ConfigureSink_WithConsoleSinkType_ConfiguresWithoutException()
     {
         var configuration = new LoggerConfiguration()
             .MinimumLevel.Information()
@@ -44,7 +44,7 @@ public class LoggingServiceExtensionsTests
     }
 
     [Fact]
-    public void ConfigureSink_LokiType_ProducesWorkingLogger()
+    public void ConfigureSink_WithLokiType_ProducesWorkingLogger()
     {
         var configuration = new LoggerConfiguration()
             .MinimumLevel.Information()
@@ -68,7 +68,7 @@ public class LoggingServiceExtensionsTests
     }
 
     [Fact]
-    public void ConfigureSink_ConsoleType_ProducesWorkingLogger()
+    public void ConfigureSink_WithConsoleType_ProducesWorkingLogger()
     {
         var configuration = new LoggerConfiguration()
             .MinimumLevel.Information()
@@ -91,7 +91,7 @@ public class LoggingServiceExtensionsTests
     }
 
     [Fact]
-    public void LoggingOptions_Defaults_AreCorrect()
+    public void LoggingOptions_WithDefaults_AreCorrect()
     {
         var options = new LoggingOptions();
 
@@ -109,7 +109,7 @@ public class LoggingServiceExtensionsTests
     }
 
     [Fact]
-    public void BindLokiQueueLimit_ValidValue_UpdatesOption()
+    public void BindLokiQueueLimit_WithValidValue_UpdatesOption()
     {
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?> { ["Logging:LokiQueueLimit"] = "25000" })
@@ -126,7 +126,7 @@ public class LoggingServiceExtensionsTests
     [InlineData("not-a-number")]
     [InlineData("0")]
     [InlineData("-50")]
-    public void BindLokiQueueLimit_InvalidOrMissing_KeepsDefault(string raw)
+    public void BindLokiQueueLimit_WithInvalidOrMissing_KeepsDefault(string raw)
     {
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?> { ["Logging:LokiQueueLimit"] = raw })
@@ -142,7 +142,7 @@ public class LoggingServiceExtensionsTests
     [InlineData("Loki", LogSinkType.Loki)]
     [InlineData("loki", LogSinkType.Loki)]
     [InlineData("Console", LogSinkType.Console)]
-    public void BindSinkType_KnownValue_OptsIntoThatSink(string raw, LogSinkType expected)
+    public void BindSinkType_WithKnownValue_OptsIntoThatSink(string raw, LogSinkType expected)
     {
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?> { ["Logging:SinkType"] = raw })
@@ -159,7 +159,7 @@ public class LoggingServiceExtensionsTests
     [InlineData("   ")]
     [InlineData("Elasticsearch")]
     [InlineData("7")]
-    public void BindSinkType_UnknownOrMissing_KeepsConsoleDefault(string raw)
+    public void BindSinkType_WithUnknownOrMissing_KeepsConsoleDefault(string raw)
     {
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?> { ["Logging:SinkType"] = raw })
@@ -172,7 +172,7 @@ public class LoggingServiceExtensionsTests
     }
 
     [Fact]
-    public void BindLokiUrl_ValueProvided_OverridesDefault()
+    public void BindLokiUrl_WhenValueProvided_OverridesDefault()
     {
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -190,7 +190,7 @@ public class LoggingServiceExtensionsTests
     [Theory]
     [InlineData("")]
     [InlineData("   ")]
-    public void BindLokiUrl_EmptyOrMissing_KeepsExistingValue(string raw)
+    public void BindLokiUrl_WithEmptyOrMissingValue_KeepsExistingValue(string raw)
     {
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?> { ["Logging:LokiUrl"] = raw })
@@ -203,7 +203,7 @@ public class LoggingServiceExtensionsTests
     }
 
     [Fact]
-    public void LogSinkType_HasExpectedValues()
+    public void LogSinkType_WhenEnumerated_HasExpectedValues()
     {
         Enum.GetValues<LogSinkType>().Should().HaveCount(3);
         ((int)LogSinkType.Loki).Should().Be(0);

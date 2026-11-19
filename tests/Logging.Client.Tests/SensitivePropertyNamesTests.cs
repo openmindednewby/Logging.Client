@@ -5,7 +5,7 @@ namespace Logging.Client.Tests;
 public class SensitivePropertyNamesTests
 {
     [Fact]
-    public void Names_ContainsAllExpectedProperties()
+    public void Names_WhenRead_ContainsAllExpectedProperties()
     {
         var expected = new[]
         {
@@ -21,7 +21,7 @@ public class SensitivePropertyNamesTests
     }
 
     [Fact]
-    public void Names_IsCaseInsensitive()
+    public void Names_WhenLookedUp_IsCaseInsensitive()
     {
         SensitivePropertyNames.Names.Contains("password").Should().BeTrue();
         SensitivePropertyNames.Names.Contains("PASSWORD").Should().BeTrue();
@@ -30,7 +30,7 @@ public class SensitivePropertyNamesTests
     }
 
     [Fact]
-    public void Names_DoesNotContainNonSensitiveProperties()
+    public void Names_WhenRead_DoesNotContainNonSensitiveProperties()
     {
         SensitivePropertyNames.Names.Contains("UserName").Should().BeFalse();
         SensitivePropertyNames.Names.Contains("Email").Should().BeFalse();

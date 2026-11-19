@@ -8,7 +8,7 @@ public class PiiMaskingPolicyTests
     private readonly PiiMaskingPolicy _policy = new();
 
     [Fact]
-    public void MaskIfPii_StandardEmail_MasksMiddleCharacters()
+    public void MaskIfPii_WithStandardEmail_MasksMiddleCharacters()
     {
         var result = PiiMaskingPolicy.MaskIfPii("test@domain.com");
 
@@ -18,7 +18,7 @@ public class PiiMaskingPolicyTests
     }
 
     [Fact]
-    public void MaskIfPii_ShortEmail_MasksCorrectly()
+    public void MaskIfPii_WithShortEmail_MasksCorrectly()
     {
         var result = PiiMaskingPolicy.MaskIfPii("ab@example.com");
 
@@ -27,7 +27,7 @@ public class PiiMaskingPolicyTests
     }
 
     [Fact]
-    public void MaskIfPii_SingleCharLocalPart_PreservesDomain()
+    public void MaskIfPii_WithSingleCharLocalPart_PreservesDomain()
     {
         var result = PiiMaskingPolicy.MaskIfPii("a@test.com");
 
@@ -35,7 +35,7 @@ public class PiiMaskingPolicyTests
     }
 
     [Fact]
-    public void MaskIfPii_LongEmail_MasksMiddle()
+    public void MaskIfPii_WithLongEmail_MasksMiddle()
     {
         var result = PiiMaskingPolicy.MaskIfPii("longusername@company.org");
 
@@ -45,7 +45,7 @@ public class PiiMaskingPolicyTests
     }
 
     [Fact]
-    public void MaskIfPii_UsPhoneWithDashes_ShowsLastFourDigitsOnly()
+    public void MaskIfPii_WithUsPhoneWithDashes_ShowsLastFourDigitsOnly()
     {
         var result = PiiMaskingPolicy.MaskIfPii("234-567-8901");
 
@@ -55,7 +55,7 @@ public class PiiMaskingPolicyTests
     }
 
     [Fact]
-    public void MaskIfPii_PhoneWithCountryCode_MasksAllButLastFour()
+    public void MaskIfPii_WithPhoneWithCountryCode_MasksAllButLastFour()
     {
         var result = PiiMaskingPolicy.MaskIfPii("+1-234-567-8901");
 
@@ -64,7 +64,7 @@ public class PiiMaskingPolicyTests
     }
 
     [Fact]
-    public void MaskIfPii_PhoneWithParens_MasksCorrectly()
+    public void MaskIfPii_WithPhoneWithParens_MasksCorrectly()
     {
         var result = PiiMaskingPolicy.MaskIfPii("(234) 567-8901");
 
@@ -73,7 +73,7 @@ public class PiiMaskingPolicyTests
     }
 
     [Fact]
-    public void MaskIfPii_PlainDigitsWithoutPlusOrSeparator_ReturnsUnchanged()
+    public void MaskIfPii_WithPlainDigitsWithoutPlusOrSeparator_ReturnsUnchanged()
     {
         var result = PiiMaskingPolicy.MaskIfPii("2345678901");
 
@@ -81,7 +81,7 @@ public class PiiMaskingPolicyTests
     }
 
     [Fact]
-    public void MaskIfPii_RegularString_ReturnsUnchanged()
+    public void MaskIfPii_WithRegularString_ReturnsUnchanged()
     {
         var result = PiiMaskingPolicy.MaskIfPii("Hello World");
 
@@ -89,7 +89,7 @@ public class PiiMaskingPolicyTests
     }
 
     [Fact]
-    public void MaskIfPii_EmptyString_ReturnsEmpty()
+    public void MaskIfPii_WithEmptyString_ReturnsEmpty()
     {
         var result = PiiMaskingPolicy.MaskIfPii("");
 
@@ -97,7 +97,7 @@ public class PiiMaskingPolicyTests
     }
 
     [Fact]
-    public void MaskIfPii_Guid_ReturnsUnchanged()
+    public void MaskIfPii_WithGuid_ReturnsUnchanged()
     {
         var guid = Guid.NewGuid().ToString();
         var result = PiiMaskingPolicy.MaskIfPii(guid);
@@ -106,7 +106,7 @@ public class PiiMaskingPolicyTests
     }
 
     [Fact]
-    public void MaskIfPii_Url_ReturnsUnchanged()
+    public void MaskIfPii_WithUrl_ReturnsUnchanged()
     {
         var url = "https://api.example.com/v1/users";
         var result = PiiMaskingPolicy.MaskIfPii(url);
@@ -115,7 +115,7 @@ public class PiiMaskingPolicyTests
     }
 
     [Fact]
-    public void MaskIfPii_IpAddress_ReturnsUnchanged()
+    public void MaskIfPii_WithIpAddress_ReturnsUnchanged()
     {
         var ip = "192.168.1.100";
         var result = PiiMaskingPolicy.MaskIfPii(ip);
@@ -138,7 +138,7 @@ public class PiiMaskingPolicyTests
     [InlineData("ClientSecret")]
     [InlineData("ConnectionString")]
     [InlineData("PrivateKey")]
-    public void MaskSensitiveProperty_SensitiveName_ReturnsRedacted(string propertyName)
+    public void MaskSensitiveProperty_WithSensitiveName_ReturnsRedacted(string propertyName)
     {
         var result = PiiMaskingPolicy.MaskSensitiveProperty(propertyName, "some-value");
 
@@ -146,7 +146,7 @@ public class PiiMaskingPolicyTests
     }
 
     [Fact]
-    public void MaskSensitiveProperty_NonSensitiveName_ReturnsPiiMaskedValue()
+    public void MaskSensitiveProperty_WithNonSensitiveName_ReturnsPiiMaskedValue()
     {
         var result = PiiMaskingPolicy.MaskSensitiveProperty("Email", "user@test.com");
 
@@ -155,7 +155,7 @@ public class PiiMaskingPolicyTests
     }
 
     [Fact]
-    public void MaskSensitiveProperty_NonSensitiveNonPii_ReturnsOriginal()
+    public void MaskSensitiveProperty_WithNonSensitiveNonPii_ReturnsOriginal()
     {
         var result = PiiMaskingPolicy.MaskSensitiveProperty("OrderId", "ORD-12345");
 
@@ -163,7 +163,7 @@ public class PiiMaskingPolicyTests
     }
 
     [Fact]
-    public void TryDestructure_NonStringValue_ReturnsFalse()
+    public void TryDestructure_WithNonStringValue_ReturnsFalse()
     {
         var success = _policy.TryDestructure(42, new MockPropertyValueFactory(), out var result);
 
@@ -172,7 +172,7 @@ public class PiiMaskingPolicyTests
     }
 
     [Fact]
-    public void TryDestructure_EmailString_ReturnsTrueWithMaskedValue()
+    public void TryDestructure_WithEmailString_ReturnsTrueWithMaskedValue()
     {
         var success = _policy.TryDestructure("user@test.com", new MockPropertyValueFactory(), out var result);
 
@@ -185,7 +185,7 @@ public class PiiMaskingPolicyTests
     }
 
     [Fact]
-    public void TryDestructure_NonPiiString_ReturnsFalse()
+    public void TryDestructure_WithNonPiiString_ReturnsFalse()
     {
         var success = _policy.TryDestructure("hello world", new MockPropertyValueFactory(), out var result);
 
@@ -194,7 +194,7 @@ public class PiiMaskingPolicyTests
     }
 
     [Fact]
-    public void MaskIfPii_ShortPhoneNumber_ReturnsUnchanged()
+    public void MaskIfPii_WithShortPhoneNumber_ReturnsUnchanged()
     {
         var result = PiiMaskingPolicy.MaskIfPii("1234");
 
@@ -202,7 +202,7 @@ public class PiiMaskingPolicyTests
     }
 
     [Fact]
-    public void MaskIfPii_EmailWithPlusSign_Masks()
+    public void MaskIfPii_WithEmailWithPlusSign_Masks()
     {
         var result = PiiMaskingPolicy.MaskIfPii("user+tag@gmail.com");
 
@@ -211,7 +211,7 @@ public class PiiMaskingPolicyTests
     }
 
     [Fact]
-    public void MaskIfPii_ConcurrentCalls_ThreadSafe()
+    public void MaskIfPii_WithConcurrentCalls_ThreadSafe()
     {
         const int iterations = 1000;
         var emails = Enumerable.Range(0, iterations)
@@ -233,7 +233,7 @@ public class PiiMaskingPolicyTests
     }
 
     [Fact]
-    public void MaskSensitiveProperty_HighThroughput_AllMasked()
+    public void MaskSensitiveProperty_WithHighThroughput_AllMasked()
     {
         const int iterations = 1000;
         var results = new string[iterations];

@@ -5,7 +5,7 @@ namespace Logging.Client.Tests;
 public class CorrelationIdContextTests
 {
     [Fact]
-    public void Current_DefaultValue_IsNull()
+    public void Current_WithDefaultValue_IsNull()
     {
         CorrelationIdContext.Current = null;
 
@@ -13,7 +13,7 @@ public class CorrelationIdContextTests
     }
 
     [Fact]
-    public void Current_SetValue_ReturnsSetValue()
+    public void Current_WhenValueSet_ReturnsSetValue()
     {
         const string expected = "test-correlation-id";
 
@@ -25,7 +25,7 @@ public class CorrelationIdContextTests
     }
 
     [Fact]
-    public async Task Current_AsyncLocalIsolation_EachTaskHasOwnValue()
+    public async Task Current_WithAsyncLocalIsolation_EachTaskHasOwnValue()
     {
         const int taskCount = 50;
         var results = new string[taskCount];

@@ -17,7 +17,7 @@ public class SinkSwitchTests
     private const string Email = "longusername@company.org";
 
     [Fact]
-    public void BindSinkType_None_FromConfiguration_SelectsNone()
+    public void BindSinkType_WithNoneFromConfiguration_SelectsNone()
     {
         var options = new LoggingOptions();
 
@@ -30,7 +30,7 @@ public class SinkSwitchTests
     [InlineData(LogSinkType.None, false)]
     [InlineData(LogSinkType.Console, true)]
     [InlineData(LogSinkType.Loki, true)]
-    public void WritesToConsole_PerSinkType(LogSinkType sinkType, bool expected)
+    public void WritesToConsole_WithEachSinkType_MatchesSinkType(LogSinkType sinkType, bool expected)
     {
         var options = new LoggingOptions { SinkType = sinkType };
 
@@ -38,7 +38,7 @@ public class SinkSwitchTests
     }
 
     [Fact]
-    public void ResolveEffectiveSinkType_None_IsLeftAloneAndNeverResolvesLoki()
+    public void ResolveEffectiveSinkType_WithNoneSink_IsLeftAloneAndNeverResolvesLoki()
     {
         var options = new LoggingOptions { SinkType = LogSinkType.None };
 
@@ -54,7 +54,7 @@ public class SinkSwitchTests
     [InlineData("", true, false)]
     [InlineData(FakeDsn, true, true)]
     [InlineData(FakeDsn, false, false)]
-    public void IsSentryActive_RequiresDsnAndSwitch(string dsn, bool enabled, bool expected)
+    public void IsSentryActive_WithDsnAndSwitch_RequiresBoth(string dsn, bool enabled, bool expected)
     {
         var options = new LoggingOptions { SentryDsn = dsn, SentryEnabled = enabled };
 
@@ -62,7 +62,7 @@ public class SinkSwitchTests
     }
 
     [Fact]
-    public void BindSentryConfiguration_EnabledFalse_TurnsSentryOff()
+    public void BindSentryConfiguration_WithEnabledFalse_TurnsSentryOff()
     {
         var options = new LoggingOptions();
         var config = Config(("Sentry:Dsn", FakeDsn), ("Sentry:Enabled", "false"));
@@ -74,7 +74,7 @@ public class SinkSwitchTests
     }
 
     [Fact]
-    public void LoggingOptions_Defaults_AreUnchanged()
+    public void LoggingOptions_WithDefaults_AreUnchanged()
     {
         var options = new LoggingOptions();
 
@@ -83,7 +83,7 @@ public class SinkSwitchTests
     }
 
     [Fact]
-    public void CreateLoggerConfiguration_NoneSink_EnrichesAndMasksExactlyLikeConsole()
+    public void CreateLoggerConfiguration_WithNoneSink_EnrichesAndMasksExactlyLikeConsole()
     {
         var none = Capture(LogSinkType.None);
         var console = Capture(LogSinkType.Console);
@@ -95,7 +95,7 @@ public class SinkSwitchTests
     }
 
     [Fact]
-    public void AddStructuredLogging_NoneSinkAndSentryDisabled_BuildsWithoutSentry()
+    public void AddStructuredLogging_WithNoneSinkAndSentryDisabled_BuildsWithoutSentry()
     {
         var builder = WebApplication.CreateBuilder();
         builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>

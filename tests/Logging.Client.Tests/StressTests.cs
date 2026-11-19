@@ -16,7 +16,7 @@ public class StressTests
         new MessageTemplateParser().Parse("Stress test message {Index}");
 
     [Fact]
-    public void RapidConcurrentLogWrites_1000Entries_AllComplete()
+    public void RapidConcurrentLogWrites_WithThousandEntries_AllComplete()
     {
         const int entryCount = 1000;
         var completedCount = 0;
@@ -37,7 +37,7 @@ public class StressTests
     }
 
     [Fact]
-    public void PiiMasking_Under1000ConcurrentCalls_AllMaskedCorrectly()
+    public void PiiMasking_WithThousandConcurrentCalls_AllMaskedCorrectly()
     {
         const int iterations = 1000;
         var emails = Enumerable.Range(0, iterations)
@@ -66,7 +66,7 @@ public class StressTests
     }
 
     [Fact]
-    public async Task CorrelationIdContext_Under1000ConcurrentTasks_MaintainsIsolation()
+    public async Task CorrelationIdContext_WithThousandConcurrentTasks_MaintainsIsolation()
     {
         const int taskCount = 1000;
         var results = new string[taskCount];
@@ -87,7 +87,7 @@ public class StressTests
     }
 
     [Fact]
-    public void CorrelationIdEnricher_HighThroughput_EnrichesCorrectly()
+    public void CorrelationIdEnricher_WithHighThroughput_EnrichesCorrectly()
     {
         const int iterations = 1000;
         var enricher = new CorrelationIdEnricher();

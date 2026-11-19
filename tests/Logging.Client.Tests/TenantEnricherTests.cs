@@ -26,7 +26,7 @@ public class TenantEnricherTests
     }
 
     [Fact]
-    public void Enrich_NoHttpContext_DoesNotAddProperty()
+    public void Enrich_WithoutHttpContext_DoesNotAddProperty()
     {
         var accessor = new Mock<IHttpContextAccessor>();
         accessor.Setup(a => a.HttpContext).Returns((HttpContext?)null);
@@ -40,7 +40,7 @@ public class TenantEnricherTests
     }
 
     [Fact]
-    public void Enrich_NoTenantClaim_DoesNotAddProperty()
+    public void Enrich_WithoutTenantClaim_DoesNotAddProperty()
     {
         var httpContext = CreateHttpContextWithClaims(("sub", "user-123"));
         var enricher = CreateEnricher(httpContext);
@@ -52,7 +52,7 @@ public class TenantEnricherTests
     }
 
     [Fact]
-    public void Enrich_NullUser_DoesNotAddProperty()
+    public void Enrich_WithNullUser_DoesNotAddProperty()
     {
         var httpContext = new DefaultHttpContext();
         var enricher = CreateEnricher(httpContext);
@@ -64,7 +64,7 @@ public class TenantEnricherTests
     }
 
     [Fact]
-    public void Enrich_DoesNotOverwriteExistingProperty()
+    public void Enrich_WithExistingProperty_DoesNotOverwriteIt()
     {
         var tenantId = Guid.NewGuid().ToString();
         var httpContext = CreateHttpContextWithClaims(("tenant_id", tenantId));
@@ -80,7 +80,7 @@ public class TenantEnricherTests
     }
 
     [Fact]
-    public void PropertyName_IsCorrect()
+    public void PropertyName_WhenRead_IsCorrect()
     {
         TenantEnricher.PropertyName.Should().Be("TenantId");
     }

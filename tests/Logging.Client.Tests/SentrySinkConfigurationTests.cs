@@ -8,7 +8,7 @@ namespace Logging.Client.Tests;
 public class SentrySinkConfigurationTests
 {
     [Fact]
-    public void ConfigureSentrySink_EmptyDsn_DoesNotThrow()
+    public void ConfigureSentrySink_WithEmptyDsn_DoesNotThrow()
     {
         var configuration = new LoggerConfiguration()
             .MinimumLevel.Information()
@@ -24,7 +24,7 @@ public class SentrySinkConfigurationTests
     }
 
     [Fact]
-    public void ConfigureSentrySink_NullDsn_DoesNotThrow()
+    public void ConfigureSentrySink_WithNullDsn_DoesNotThrow()
     {
         var configuration = new LoggerConfiguration()
             .MinimumLevel.Information()
@@ -40,7 +40,7 @@ public class SentrySinkConfigurationTests
     }
 
     [Fact]
-    public void ConfigureSentrySink_EmptyDsn_ProducesWorkingLogger()
+    public void ConfigureSentrySink_WithEmptyDsn_ProducesWorkingLogger()
     {
         var configuration = new LoggerConfiguration()
             .MinimumLevel.Information()
@@ -62,7 +62,7 @@ public class SentrySinkConfigurationTests
     }
 
     [Fact]
-    public void ConfigureSentrySink_ValidDsn_DoesNotThrow()
+    public void ConfigureSentrySink_WithValidDsn_DoesNotThrow()
     {
         var configuration = new LoggerConfiguration()
             .MinimumLevel.Information()
@@ -80,7 +80,7 @@ public class SentrySinkConfigurationTests
     }
 
     [Fact]
-    public void ConfigureSentrySink_ValidDsn_ProducesWorkingLogger()
+    public void ConfigureSentrySink_WithValidDsn_ProducesWorkingLogger()
     {
         var configuration = new LoggerConfiguration()
             .MinimumLevel.Information()
@@ -104,7 +104,7 @@ public class SentrySinkConfigurationTests
     }
 
     [Fact]
-    public void LoggingOptions_SentryDefaults_AreCorrect()
+    public void LoggingOptions_WithSentryDefaults_AreCorrect()
     {
         var options = new LoggingOptions();
 
@@ -115,7 +115,7 @@ public class SentrySinkConfigurationTests
     }
 
     [Fact]
-    public void ConfigureSentrySink_CustomMinimumLevel_AcceptsAllLevels()
+    public void ConfigureSentrySink_WithCustomMinimumLevel_AcceptsAllLevels()
     {
         foreach (var level in Enum.GetValues<LogEventLevel>())
         {
@@ -135,7 +135,7 @@ public class SentrySinkConfigurationTests
     }
 
     [Fact]
-    public void BindSentryConfiguration_TracesSampleRate_ParsesValidValue()
+    public void BindSentryConfiguration_WithTracesSampleRate_ParsesValidValue()
     {
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -152,7 +152,7 @@ public class SentrySinkConfigurationTests
     }
 
     [Fact]
-    public void BindSentryConfiguration_TracesSampleRate_ClampsAboveOne()
+    public void BindSentryConfiguration_WithTracesSampleRate_ClampsAboveOne()
     {
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -169,7 +169,7 @@ public class SentrySinkConfigurationTests
     }
 
     [Fact]
-    public void BindSentryConfiguration_TracesSampleRate_ClampsBelowZero()
+    public void BindSentryConfiguration_WithTracesSampleRate_ClampsBelowZero()
     {
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -186,7 +186,7 @@ public class SentrySinkConfigurationTests
     }
 
     [Fact]
-    public void BindSentryConfiguration_TracesSampleRate_IgnoresInvalidValue()
+    public void BindSentryConfiguration_WithTracesSampleRate_IgnoresInvalidValue()
     {
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -203,7 +203,7 @@ public class SentrySinkConfigurationTests
     }
 
     [Fact]
-    public void BindSentryConfiguration_AllProperties_ParsedCorrectly()
+    public void BindSentryConfiguration_WithAllProperties_ParsedCorrectly()
     {
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -226,7 +226,7 @@ public class SentrySinkConfigurationTests
     }
 
     [Fact]
-    public void BindSentryConfiguration_EmptySection_DoesNotModifyDefaults()
+    public void BindSentryConfiguration_WithEmptySection_DoesNotModifyDefaults()
     {
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>())
@@ -247,7 +247,7 @@ public class SentrySinkConfigurationTests
     [InlineData("0.1", 0.1)]
     [InlineData("0.5", 0.5)]
     [InlineData("1.0", 1.0)]
-    public void BindSentryConfiguration_TracesSampleRate_AcceptsValidRange(string input, double expected)
+    public void BindSentryConfiguration_WithTracesSampleRate_AcceptsValidRange(string input, double expected)
     {
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>

@@ -15,7 +15,7 @@ public class PiiMaskingPipelineTests
     [InlineData(LogSinkType.Console, "{Email}")]
     [InlineData(LogSinkType.None, "{@Email}")]
     [InlineData(LogSinkType.None, "{Email}")]
-    public void Log_EmailProperty_IsMaskedInPropertyAndRenderedMessage(LogSinkType sinkType, string template)
+    public void Log_WithEmailProperty_IsMaskedInPropertyAndRenderedMessage(LogSinkType sinkType, string template)
     {
         var logEvent = Capture(sinkType, l => l.Information("Contact " + template, Email));
 
@@ -25,7 +25,7 @@ public class PiiMaskingPipelineTests
     }
 
     [Fact]
-    public void Log_DestructuredObject_MasksNestedPiiAndSensitiveNames()
+    public void Log_WithDestructuredObject_MasksNestedPiiAndSensitiveNames()
     {
         var user = new { Email, Phone, Password = "hunter2", Name = "Ann" };
 
@@ -45,7 +45,7 @@ public class PiiMaskingPipelineTests
     [InlineData("2026-09-26T10:00:00Z")]
     [InlineData("10004567")]
     [InlineData("1234567890123")]
-    public void Log_NonPhoneDigitString_IsLeftUnmasked(string value)
+    public void Log_WithNonPhoneDigitString_IsLeftUnmasked(string value)
     {
         var logEvent = Capture(LogSinkType.Console, l => l.Information("{Reference}", value));
 
@@ -53,7 +53,7 @@ public class PiiMaskingPipelineTests
     }
 
     [Fact]
-    public void Log_NumericCorrelationId_IsLeftUnmasked()
+    public void Log_WithNumericCorrelationId_IsLeftUnmasked()
     {
         const string correlationId = "20260926100000";
         CorrelationIdContext.Current = correlationId;
@@ -72,7 +72,7 @@ public class PiiMaskingPipelineTests
     [Theory]
     [InlineData("+35799123456", "123456")]
     [InlineData("99 123 456", "99 123")]
-    public void Log_PhoneShapedString_IsMasked(string value, string mustNotContain)
+    public void Log_WithPhoneShapedString_IsMasked(string value, string mustNotContain)
     {
         var logEvent = Capture(LogSinkType.Console, l => l.Information("{Contact}", value));
 
@@ -90,7 +90,7 @@ public class PiiMaskingPipelineTests
     [InlineData("TelNumber")]
     [InlineData("Telephone")]
     [InlineData("SMSPhone")]
-    public void Log_PhoneNamedProperty_IsMaskedWhateverItsShape(string name)
+    public void Log_WithPhoneNamedProperty_IsMaskedWhateverItsShape(string name)
     {
         var logEvent = Capture(LogSinkType.Console, l => l.Information("{" + name + "}", "12345"));
 
@@ -102,7 +102,7 @@ public class PiiMaskingPipelineTests
     [InlineData("TelemetryId")]
     [InlineData("Intel")]
     [InlineData("hotel_name")]
-    public void Log_NameContainingTelInsideAWord_IsNotAPhoneName(string name)
+    public void Log_WithNameContainingTelInsideAWord_IsNotAPhoneName(string name)
     {
         var logEvent = Capture(LogSinkType.Console, l => l.Information("{" + name + "}", "12345"));
 
@@ -110,7 +110,7 @@ public class PiiMaskingPipelineTests
     }
 
     [Fact]
-    public void Log_SensitiveScalarName_IsRedacted()
+    public void Log_WithSensitiveScalarName_IsRedacted()
     {
         var logEvent = Capture(LogSinkType.Console, l => l.Information("{Token}", "abc123"));
 
@@ -118,7 +118,7 @@ public class PiiMaskingPipelineTests
     }
 
     [Fact]
-    public void Log_MaskingDisabled_LeavesValueUntouched()
+    public void Log_WhenMaskingDisabled_LeavesValueUntouched()
     {
         var logEvent = Capture(
             LogSinkType.Console,

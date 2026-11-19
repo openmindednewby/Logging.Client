@@ -7,7 +7,7 @@ namespace Logging.Client.Tests;
 public class CorrelationIdMiddlewareTests
 {
     [Fact]
-    public async Task InvokeAsync_NoHeaderProvided_GeneratesNewCorrelationId()
+    public async Task InvokeAsync_WithoutHeaderProvided_GeneratesNewCorrelationId()
     {
         string? capturedCorrelationId = null;
         var middleware = new CorrelationIdMiddleware(next: context =>
@@ -25,7 +25,7 @@ public class CorrelationIdMiddlewareTests
     }
 
     [Fact]
-    public async Task InvokeAsync_HeaderProvided_UsesExistingCorrelationId()
+    public async Task InvokeAsync_WithHeaderProvided_UsesExistingCorrelationId()
     {
         const string existingId = "test-corr-1234567890";
         string? capturedCorrelationId = null;
@@ -44,7 +44,7 @@ public class CorrelationIdMiddlewareTests
     }
 
     [Fact]
-    public async Task InvokeAsync_Always_AddsCorrelationIdToResponseHeader()
+    public async Task InvokeAsync_WithAnyRequest_AddsCorrelationIdToResponseHeader()
     {
         const string existingId = "resp-corr-id-test";
         var middleware = new CorrelationIdMiddleware(next: _ => Task.CompletedTask);
@@ -59,7 +59,7 @@ public class CorrelationIdMiddlewareTests
     }
 
     [Fact]
-    public async Task InvokeAsync_GeneratedId_IsAlsoInResponseHeader()
+    public async Task InvokeAsync_WithGeneratedId_IsAlsoInResponseHeader()
     {
         string? capturedId = null;
         var middleware = new CorrelationIdMiddleware(next: _ =>
@@ -77,7 +77,7 @@ public class CorrelationIdMiddlewareTests
     }
 
     [Fact]
-    public async Task InvokeAsync_CallsNextMiddleware()
+    public async Task InvokeAsync_WithAnyRequest_CallsNextMiddleware()
     {
         var nextCalled = false;
         var middleware = new CorrelationIdMiddleware(next: _ =>
@@ -94,7 +94,7 @@ public class CorrelationIdMiddlewareTests
     }
 
     [Fact]
-    public async Task InvokeAsync_ConcurrentRequests_EachHasOwnCorrelationId()
+    public async Task InvokeAsync_WithConcurrentRequests_EachHasOwnCorrelationId()
     {
         const int requestCount = 100;
         var capturedIds = new string[requestCount];
@@ -117,7 +117,7 @@ public class CorrelationIdMiddlewareTests
     }
 
     [Fact]
-    public void HeaderName_IsCorrectValue()
+    public void HeaderName_WhenRead_IsCorrectValue()
     {
         CorrelationIdMiddleware.HeaderName.Should().Be("X-Correlation-ID");
     }

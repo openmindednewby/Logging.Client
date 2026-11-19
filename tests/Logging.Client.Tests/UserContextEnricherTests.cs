@@ -26,7 +26,7 @@ public class UserContextEnricherTests
     }
 
     [Fact]
-    public void Enrich_NoSubClaim_DoesNotAddProperty()
+    public void Enrich_WithoutSubClaim_DoesNotAddProperty()
     {
         var httpContext = CreateHttpContextWithClaims(("tenant_id", "t-123"));
         var enricher = CreateEnricher(httpContext);
@@ -38,7 +38,7 @@ public class UserContextEnricherTests
     }
 
     [Fact]
-    public void Enrich_NoHttpContext_DoesNotAddProperty()
+    public void Enrich_WithoutHttpContext_DoesNotAddProperty()
     {
         var accessor = new Mock<IHttpContextAccessor>();
         accessor.Setup(a => a.HttpContext).Returns((HttpContext?)null);
@@ -51,7 +51,7 @@ public class UserContextEnricherTests
     }
 
     [Fact]
-    public void PropertyName_IsCorrect()
+    public void PropertyName_WhenRead_IsCorrect()
     {
         UserContextEnricher.PropertyName.Should().Be("UserId");
     }

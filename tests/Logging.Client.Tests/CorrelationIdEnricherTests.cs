@@ -39,7 +39,7 @@ public class CorrelationIdEnricherTests
     }
 
     [Fact]
-    public void Enrich_EmptyCorrelationId_DoesNotAddProperty()
+    public void Enrich_WithEmptyCorrelationId_DoesNotAddProperty()
     {
         CorrelationIdContext.Current = "";
         var logEvent = CreateLogEvent();
@@ -52,7 +52,7 @@ public class CorrelationIdEnricherTests
     }
 
     [Fact]
-    public void PropertyName_IsCorrect()
+    public void PropertyName_WhenRead_IsCorrect()
     {
         CorrelationIdEnricher.PropertyName.Should().Be("CorrelationId");
     }

@@ -10,7 +10,7 @@ public class LokiEndpointGuardTests
     private static readonly Func<string, bool> NeverResolves = _ => false;
 
     [Fact]
-    public void ResolveEffectiveSinkType_LokiHostUnresolvable_FallsBackToConsole()
+    public void ResolveEffectiveSinkType_WhenLokiHostUnresolvable_FallsBackToConsole()
     {
         var options = new LoggingOptions
         {
@@ -28,7 +28,7 @@ public class LokiEndpointGuardTests
     }
 
     [Fact]
-    public void ResolveEffectiveSinkType_LokiHostResolves_KeepsLokiAndDoesNotWarn()
+    public void ResolveEffectiveSinkType_WhenLokiHostResolves_KeepsLokiAndDoesNotWarn()
     {
         var options = new LoggingOptions
         {
@@ -44,7 +44,7 @@ public class LokiEndpointGuardTests
     }
 
     [Fact]
-    public void ResolveEffectiveSinkType_ConsoleSinkType_NeverProbesDns()
+    public void ResolveEffectiveSinkType_WithConsoleSinkType_NeverProbesDns()
     {
         var options = new LoggingOptions { SinkType = LogSinkType.Console };
         var probedHosts = new List<string>();
@@ -69,7 +69,7 @@ public class LokiEndpointGuardTests
     [InlineData("   ")]
     [InlineData("not-a-url")]
     [InlineData("loki.monitoring.svc.cluster.local:3100")]
-    public void ResolveEffectiveSinkType_MalformedLokiUrl_FallsBackToConsole(string lokiUrl)
+    public void ResolveEffectiveSinkType_WithMalformedLokiUrl_FallsBackToConsole(string lokiUrl)
     {
         var options = new LoggingOptions { SinkType = LogSinkType.Loki, LokiUrl = lokiUrl };
         var warnings = new List<string>();
@@ -81,7 +81,7 @@ public class LokiEndpointGuardTests
     }
 
     [Fact]
-    public void ResolveEffectiveSinkType_ResolverThrows_FallsBackToConsoleWithoutThrowing()
+    public void ResolveEffectiveSinkType_WhenResolverThrows_FallsBackToConsoleWithoutThrowing()
     {
         var options = new LoggingOptions { SinkType = LogSinkType.Loki, LokiUrl = "http://loki:3100" };
         var warnings = new List<string>();
@@ -96,7 +96,7 @@ public class LokiEndpointGuardTests
     [InlineData("http://loki.monitoring.svc.cluster.local:3100", "loki.monitoring.svc.cluster.local")]
     [InlineData("https://logs.example.com/loki/api/v1/push", "logs.example.com")]
     [InlineData("http://10.0.0.2:31300", "10.0.0.2")]
-    public void TryGetHost_AbsoluteUrl_ReturnsHost(string lokiUrl, string expectedHost)
+    public void TryGetHost_WithAbsoluteUrl_ReturnsHost(string lokiUrl, string expectedHost)
     {
         LokiEndpointGuard.TryGetHost(lokiUrl).Should().Be(expectedHost);
     }
@@ -106,19 +106,19 @@ public class LokiEndpointGuardTests
     [InlineData("   ")]
     [InlineData("loki:3100")]
     [InlineData("/loki/api/v1/push")]
-    public void TryGetHost_NotAnAbsoluteUrl_ReturnsNull(string lokiUrl)
+    public void TryGetHost_WithNonAbsoluteUrl_ReturnsNull(string lokiUrl)
     {
         LokiEndpointGuard.TryGetHost(lokiUrl).Should().BeNull();
     }
 
     [Fact]
-    public void HostResolves_IpLiteral_ShortCircuitsWithoutDnsLookup()
+    public void HostResolves_WithIpLiteral_ShortCircuitsWithoutDnsLookup()
     {
         LokiEndpointGuard.HostResolves("10.0.0.2", TimeSpan.Zero).Should().BeTrue();
     }
 
     [Fact]
-    public void ResolveTimeout_IsBoundedSoStartupCannotHang()
+    public void ResolveTimeout_WhenRead_IsBoundedSoStartupCannotHang()
     {
         LokiEndpointGuard.ResolveTimeout.Should().BeGreaterThan(TimeSpan.Zero);
         LokiEndpointGuard.ResolveTimeout.Should().BeLessThanOrEqualTo(TimeSpan.FromSeconds(5));

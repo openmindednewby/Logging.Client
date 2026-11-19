@@ -8,7 +8,7 @@ namespace Logging.Client.Tests;
 public class SentryUserContextMiddlewareTests
 {
     [Fact]
-    public async Task InvokeAsync_AuthenticatedUser_CallsNextMiddleware()
+    public async Task InvokeAsync_WithAuthenticatedUser_CallsNextMiddleware()
     {
         var nextCalled = false;
         var middleware = new SentryUserContextMiddleware(next: _ =>
@@ -25,7 +25,7 @@ public class SentryUserContextMiddlewareTests
     }
 
     [Fact]
-    public async Task InvokeAsync_UnauthenticatedUser_CallsNextMiddleware()
+    public async Task InvokeAsync_WithUnauthenticatedUser_CallsNextMiddleware()
     {
         var nextCalled = false;
         var middleware = new SentryUserContextMiddleware(next: _ =>
@@ -42,7 +42,7 @@ public class SentryUserContextMiddlewareTests
     }
 
     [Fact]
-    public async Task InvokeAsync_AuthenticatedUserWithClaims_DoesNotThrow()
+    public async Task InvokeAsync_WithAuthenticatedUserWithClaims_DoesNotThrow()
     {
         var middleware = new SentryUserContextMiddleware(next: _ => Task.CompletedTask);
         var httpContext = CreateAuthenticatedContext("user-guid-abc", "tenant-guid-xyz");
@@ -52,7 +52,7 @@ public class SentryUserContextMiddlewareTests
     }
 
     [Fact]
-    public async Task InvokeAsync_AuthenticatedUserWithoutTenantClaim_DoesNotThrow()
+    public async Task InvokeAsync_WithAuthenticatedUserWithoutTenantClaim_DoesNotThrow()
     {
         var middleware = new SentryUserContextMiddleware(next: _ => Task.CompletedTask);
         var httpContext = CreateAuthenticatedContext("user-guid-abc", tenantId: null);
@@ -62,7 +62,7 @@ public class SentryUserContextMiddlewareTests
     }
 
     [Fact]
-    public async Task InvokeAsync_AuthenticatedUserWithoutSubClaim_DoesNotThrow()
+    public async Task InvokeAsync_WithAuthenticatedUserWithoutSubClaim_DoesNotThrow()
     {
         var middleware = new SentryUserContextMiddleware(next: _ => Task.CompletedTask);
         var httpContext = CreateAuthenticatedContext(userId: null, tenantId: "tenant-456");
@@ -72,7 +72,7 @@ public class SentryUserContextMiddlewareTests
     }
 
     [Fact]
-    public async Task InvokeAsync_UnauthenticatedUser_DoesNotThrow()
+    public async Task InvokeAsync_WithUnauthenticatedUser_DoesNotThrow()
     {
         var middleware = new SentryUserContextMiddleware(next: _ => Task.CompletedTask);
         var httpContext = new DefaultHttpContext();
@@ -82,7 +82,7 @@ public class SentryUserContextMiddlewareTests
     }
 
     [Fact]
-    public async Task InvokeAsync_ConcurrentRequests_EachProcessedIndependently()
+    public async Task InvokeAsync_WithConcurrentRequests_EachProcessedIndependently()
     {
         const int requestCount = 50;
         var processedCount = 0;
@@ -105,7 +105,7 @@ public class SentryUserContextMiddlewareTests
     }
 
     [Fact]
-    public async Task InvokeAsync_NullUserIdentity_DoesNotThrow()
+    public async Task InvokeAsync_WithNullUserIdentity_DoesNotThrow()
     {
         var middleware = new SentryUserContextMiddleware(next: _ => Task.CompletedTask);
         var httpContext = new DefaultHttpContext();
@@ -146,7 +146,7 @@ public class SentryUserContextMiddlewareTests
     }
 
     [Fact]
-    public async Task InvokeAsync_UnauthenticatedWithCorrelationId_DoesNotThrow()
+    public async Task InvokeAsync_WithUnauthenticatedWithCorrelationId_DoesNotThrow()
     {
         var middleware = new SentryUserContextMiddleware(next: _ => Task.CompletedTask);
         var httpContext = new DefaultHttpContext();
