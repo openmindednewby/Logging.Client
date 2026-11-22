@@ -74,6 +74,28 @@ public class MinimumLevelsTests
         options.MinimumLevel.Should().Be(LogEventLevel.Information);
     }
 
+    [Fact]
+    public void CreateLoggerConfiguration_WithMicrosoftOverrideInformation_DropsHostingRequestStartingLine()
+    {
+        var logger = BuildLogger(new() { ["Serilog:MinimumLevel:Override:Microsoft"] = "Information" });
+
+        var hosting = logger.ForContext(Constants.SourceContextPropertyName, "Microsoft.AspNetCore.Hosting.Diagnostics");
+
+        hosting.IsEnabled(LogEventLevel.Information).Should().BeFalse();
+    }
+
+    [Fact]
+    public void CreateLoggerConfiguration_WithMicrosoftOverrideInformation_KeepsSerilogRequestLogAndRouting()
+    {
+        var logger = BuildLogger(new() { ["Serilog:MinimumLevel:Override:Microsoft"] = "Information" });
+
+        var requestLog = logger.ForContext(Constants.SourceContextPropertyName, "Serilog.AspNetCore.RequestLoggingMiddleware");
+        var routing = logger.ForContext(Constants.SourceContextPropertyName, "Microsoft.AspNetCore.Routing");
+
+        requestLog.IsEnabled(LogEventLevel.Information).Should().BeTrue();
+        routing.IsEnabled(LogEventLevel.Information).Should().BeTrue();
+    }
+
     private static Logger BuildLogger(Dictionary<string, string?> settings)
     {
         var options = new LoggingOptions { ServiceName = "levels-test", SinkType = LogSinkType.None };

@@ -62,6 +62,7 @@ public sealed class LoggingOptions
     {
         ["Microsoft"] = LogEventLevel.Warning,
         ["Microsoft.Hosting.Lifetime"] = LogEventLevel.Information,
+        ["Microsoft.AspNetCore.Hosting.Diagnostics"] = LogEventLevel.Warning,
         ["System"] = LogEventLevel.Warning,
     };
 }
