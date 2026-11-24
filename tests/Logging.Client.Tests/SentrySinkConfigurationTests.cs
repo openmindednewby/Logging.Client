@@ -146,7 +146,7 @@ public class SentrySinkConfigurationTests
 
         var options = new LoggingOptions();
 
-        LoggingServiceExtensions.BindSentryConfiguration(config.GetSection("Sentry"), options);
+        LoggingServiceExtensions.BindSentryConfiguration(ConfigSections.Sentry(config), options);
 
         options.SentryTracesSampleRate.Should().Be(0.5);
     }
@@ -163,7 +163,7 @@ public class SentrySinkConfigurationTests
 
         var options = new LoggingOptions();
 
-        LoggingServiceExtensions.BindSentryConfiguration(config.GetSection("Sentry"), options);
+        LoggingServiceExtensions.BindSentryConfiguration(ConfigSections.Sentry(config), options);
 
         options.SentryTracesSampleRate.Should().Be(1.0);
     }
@@ -180,7 +180,7 @@ public class SentrySinkConfigurationTests
 
         var options = new LoggingOptions();
 
-        LoggingServiceExtensions.BindSentryConfiguration(config.GetSection("Sentry"), options);
+        LoggingServiceExtensions.BindSentryConfiguration(ConfigSections.Sentry(config), options);
 
         options.SentryTracesSampleRate.Should().Be(0.0);
     }
@@ -197,7 +197,7 @@ public class SentrySinkConfigurationTests
 
         var options = new LoggingOptions();
 
-        LoggingServiceExtensions.BindSentryConfiguration(config.GetSection("Sentry"), options);
+        LoggingServiceExtensions.BindSentryConfiguration(ConfigSections.Sentry(config), options);
 
         options.SentryTracesSampleRate.Should().Be(0.0);
     }
@@ -217,7 +217,7 @@ public class SentrySinkConfigurationTests
 
         var options = new LoggingOptions();
 
-        LoggingServiceExtensions.BindSentryConfiguration(config.GetSection("Sentry"), options);
+        LoggingServiceExtensions.BindSentryConfiguration(ConfigSections.Sentry(config), options);
 
         options.SentryDsn.Should().Be("https://test@sentry.io/123");
         options.SentryEnvironment.Should().Be("Production");
@@ -234,7 +234,7 @@ public class SentrySinkConfigurationTests
 
         var options = new LoggingOptions();
 
-        LoggingServiceExtensions.BindSentryConfiguration(config.GetSection("Sentry"), options);
+        LoggingServiceExtensions.BindSentryConfiguration(ConfigSections.Sentry(config), options);
 
         options.SentryDsn.Should().Be(string.Empty);
         options.SentryEnvironment.Should().Be("Development");
@@ -258,7 +258,7 @@ public class SentrySinkConfigurationTests
 
         var options = new LoggingOptions();
 
-        LoggingServiceExtensions.BindSentryConfiguration(config.GetSection("Sentry"), options);
+        LoggingServiceExtensions.BindSentryConfiguration(ConfigSections.Sentry(config), options);
 
         options.SentryTracesSampleRate.Should().Be(expected);
     }

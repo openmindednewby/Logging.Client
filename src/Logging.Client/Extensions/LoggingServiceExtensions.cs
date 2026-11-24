@@ -29,19 +29,25 @@ public static class LoggingServiceExtensions
         var options = new LoggingOptions();
         configure(options);
 
-        BindSinkType(builder.Configuration, options);
-        BindLokiUrl(builder.Configuration, options);
-        ConsoleSink.BindFormat(builder.Configuration, options);
-        MinimumLevels.Bind(builder.Configuration, options);
+        var loggingSection = builder.Configuration.GetSection(LoggingSectionOptions.SectionName).Get<LoggingSectionOptions>()
+            ?? new LoggingSectionOptions();
+        var minimumLevelSection = builder.Configuration.GetSection(MinimumLevelSectionOptions.SectionName);
+        var minimumLevels = minimumLevelSection.Get<MinimumLevelSectionOptions>() ?? new MinimumLevelSectionOptions();
+        minimumLevels.Shorthand = minimumLevelSection.Value;
 
-        BindLokiQueueLimit(builder.Configuration, options);
+        BindSinkType(loggingSection, options);
+        BindLokiUrl(loggingSection, options);
+        ConsoleSink.BindFormat(loggingSection, options);
+        MinimumLevels.Bind(minimumLevels, options);
+
+        BindLokiQueueLimit(loggingSection, options);
 
         options.SinkType = LokiEndpointGuard.ResolveEffectiveSinkType(
             options,
             LokiEndpointGuard.DnsHostResolver,
             LokiEndpointGuard.WriteStartupWarning);
 
-        var sentrySection = builder.Configuration.GetSection("Sentry");
+        var sentrySection = builder.Configuration.GetSection(SentrySectionOptions.SectionName).Get<SentrySectionOptions>();
         BindSentryConfiguration(sentrySection, options);
 
         var environment = builder.Environment.EnvironmentName;
@@ -172,54 +178,54 @@ public static class LoggingServiceExtensions
     }
 
     internal static void BindSentryConfiguration(
-        IConfigurationSection sentrySection,
+        SentrySectionOptions? sentrySection,
         LoggingOptions options)
     {
-        if (!sentrySection.Exists()) return;
+        if (sentrySection is null) return;
 
-        var enabled = sentrySection["Enabled"];
+        var enabled = sentrySection.Enabled;
         if (!string.IsNullOrEmpty(enabled) && bool.TryParse(enabled, out var isEnabled))
             options.SentryEnabled = isEnabled;
 
-        var dsn = sentrySection["Dsn"];
+        var dsn = sentrySection.Dsn;
         if (!string.IsNullOrEmpty(dsn)) options.SentryDsn = dsn;
 
-        var env = sentrySection["Environment"];
+        var env = sentrySection.Environment;
         if (!string.IsNullOrEmpty(env)) options.SentryEnvironment = env;
 
-        var minLevel = sentrySection["MinimumEventLevel"];
+        var minLevel = sentrySection.MinimumEventLevel;
         if (!string.IsNullOrEmpty(minLevel) && Enum.TryParse<LogEventLevel>(minLevel, true, out var parsed))
             options.SentryMinimumLevel = parsed;
 
-        var tracesSampleRate = sentrySection["TracesSampleRate"];
+        var tracesSampleRate = sentrySection.TracesSampleRate;
         if (!string.IsNullOrEmpty(tracesSampleRate) && double.TryParse(tracesSampleRate, out var rate))
             options.SentryTracesSampleRate = Math.Clamp(rate, 0.0, 1.0);
     }
 
     internal static void BindSinkType(
-        IConfiguration configuration,
+        LoggingSectionOptions loggingSection,
         LoggingOptions options)
     {
-        var value = configuration["Logging:SinkType"];
+        var value = loggingSection.SinkType;
         if (!string.IsNullOrWhiteSpace(value) && Enum.TryParse<LogSinkType>(value, true, out var parsed)
             && Enum.IsDefined(parsed))
             options.SinkType = parsed;
     }
 
     internal static void BindLokiUrl(
-        IConfiguration configuration,
+        LoggingSectionOptions loggingSection,
         LoggingOptions options)
     {
-        var value = configuration["Logging:LokiUrl"];
+        var value = loggingSection.LokiUrl;
         if (!string.IsNullOrWhiteSpace(value))
             options.LokiUrl = value;
     }
 
     internal static void BindLokiQueueLimit(
-        IConfiguration configuration,
+        LoggingSectionOptions loggingSection,
         LoggingOptions options)
     {
-        var value = configuration["Logging:LokiQueueLimit"];
+        var value = loggingSection.LokiQueueLimit;
         if (!string.IsNullOrEmpty(value) && int.TryParse(value, out var parsed) && parsed > 0)
             options.LokiQueueLimit = parsed;
     }

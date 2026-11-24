@@ -116,7 +116,7 @@ public class LoggingServiceExtensionsTests
             .Build();
         var options = new LoggingOptions();
 
-        LoggingServiceExtensions.BindLokiQueueLimit(config, options);
+        LoggingServiceExtensions.BindLokiQueueLimit(ConfigSections.Logging(config), options);
 
         options.LokiQueueLimit.Should().Be(25_000);
     }
@@ -133,7 +133,7 @@ public class LoggingServiceExtensionsTests
             .Build();
         var options = new LoggingOptions();
 
-        LoggingServiceExtensions.BindLokiQueueLimit(config, options);
+        LoggingServiceExtensions.BindLokiQueueLimit(ConfigSections.Logging(config), options);
 
         options.LokiQueueLimit.Should().Be(10_000);
     }
@@ -149,7 +149,7 @@ public class LoggingServiceExtensionsTests
             .Build();
         var options = new LoggingOptions();
 
-        LoggingServiceExtensions.BindSinkType(config, options);
+        LoggingServiceExtensions.BindSinkType(ConfigSections.Logging(config), options);
 
         options.SinkType.Should().Be(expected);
     }
@@ -166,7 +166,7 @@ public class LoggingServiceExtensionsTests
             .Build();
         var options = new LoggingOptions();
 
-        LoggingServiceExtensions.BindSinkType(config, options);
+        LoggingServiceExtensions.BindSinkType(ConfigSections.Logging(config), options);
 
         options.SinkType.Should().Be(LogSinkType.Console);
     }
@@ -182,7 +182,7 @@ public class LoggingServiceExtensionsTests
             .Build();
         var options = new LoggingOptions();
 
-        LoggingServiceExtensions.BindLokiUrl(config, options);
+        LoggingServiceExtensions.BindLokiUrl(ConfigSections.Logging(config), options);
 
         options.LokiUrl.Should().Be("http://10.0.0.2:31300");
     }
@@ -197,7 +197,7 @@ public class LoggingServiceExtensionsTests
             .Build();
         var options = new LoggingOptions { LokiUrl = "http://existing:3100" };
 
-        LoggingServiceExtensions.BindLokiUrl(config, options);
+        LoggingServiceExtensions.BindLokiUrl(ConfigSections.Logging(config), options);
 
         options.LokiUrl.Should().Be("http://existing:3100");
     }

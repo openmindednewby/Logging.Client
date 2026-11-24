@@ -21,7 +21,7 @@ public class SinkSwitchTests
     {
         var options = new LoggingOptions();
 
-        LoggingServiceExtensions.BindSinkType(Config(("Logging:SinkType", "None")), options);
+        LoggingServiceExtensions.BindSinkType(ConfigSections.Logging(Config(("Logging:SinkType", "None"))), options);
 
         options.SinkType.Should().Be(LogSinkType.None);
     }
@@ -67,7 +67,7 @@ public class SinkSwitchTests
         var options = new LoggingOptions();
         var config = Config(("Sentry:Dsn", FakeDsn), ("Sentry:Enabled", "false"));
 
-        LoggingServiceExtensions.BindSentryConfiguration(config.GetSection("Sentry"), options);
+        LoggingServiceExtensions.BindSentryConfiguration(ConfigSections.Sentry(config), options);
 
         options.SentryEnabled.Should().BeFalse();
         LoggingServiceExtensions.IsSentryActive(options).Should().BeFalse();

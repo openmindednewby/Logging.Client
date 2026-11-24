@@ -1,5 +1,4 @@
 using Logging.Client.Configuration;
-using Microsoft.Extensions.Configuration;
 using Serilog;
 using Serilog.Events;
 
@@ -7,19 +6,15 @@ namespace Logging.Client.Extensions;
 
 internal static class MinimumLevels
 {
-    private const string MinimumLevelKey = "Serilog:MinimumLevel";
-    private const string DefaultKey = "Serilog:MinimumLevel:Default";
-    private const string OverrideSection = "Serilog:MinimumLevel:Override";
-
-    internal static void Bind(IConfiguration configuration, LoggingOptions options)
+    internal static void Bind(MinimumLevelSectionOptions minimumLevels, LoggingOptions options)
     {
-        if (TryParse(configuration[DefaultKey] ?? configuration[MinimumLevelKey], out var level))
+        if (TryParse(minimumLevels.Default ?? minimumLevels.Shorthand, out var level))
             options.MinimumLevel = level;
 
-        foreach (var entry in configuration.GetSection(OverrideSection).GetChildren())
+        foreach (var (source, value) in minimumLevels.Override)
         {
-            if (TryParse(entry.Value, out var overrideLevel))
-                options.MinimumLevelOverrides[entry.Key] = overrideLevel;
+            if (TryParse(value, out var overrideLevel))
+                options.MinimumLevelOverrides[source] = overrideLevel;
         }
     }
 

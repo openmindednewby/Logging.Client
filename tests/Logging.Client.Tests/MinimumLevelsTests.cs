@@ -58,7 +58,7 @@ public class MinimumLevelsTests
         var options = new LoggingOptions();
         var configuration = Configuration(new() { ["Serilog:MinimumLevel"] = "Error" });
 
-        MinimumLevels.Bind(configuration, options);
+        MinimumLevels.Bind(ConfigSections.MinimumLevel(configuration), options);
 
         options.MinimumLevel.Should().Be(LogEventLevel.Error);
     }
@@ -69,7 +69,7 @@ public class MinimumLevelsTests
         var options = new LoggingOptions();
         var configuration = Configuration(new() { ["Serilog:MinimumLevel:Default"] = "Loud" });
 
-        MinimumLevels.Bind(configuration, options);
+        MinimumLevels.Bind(ConfigSections.MinimumLevel(configuration), options);
 
         options.MinimumLevel.Should().Be(LogEventLevel.Information);
     }
@@ -99,7 +99,7 @@ public class MinimumLevelsTests
     private static Logger BuildLogger(Dictionary<string, string?> settings)
     {
         var options = new LoggingOptions { ServiceName = "levels-test", SinkType = LogSinkType.None };
-        MinimumLevels.Bind(Configuration(settings), options);
+        MinimumLevels.Bind(ConfigSections.MinimumLevel(Configuration(settings)), options);
         return LoggingServiceExtensions.CreateLoggerConfiguration(options, "Production").CreateLogger();
     }
 

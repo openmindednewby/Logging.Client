@@ -1,5 +1,4 @@
 using Logging.Client.Configuration;
-using Microsoft.Extensions.Configuration;
 using Serilog;
 using Serilog.Formatting.Compact;
 
@@ -25,9 +24,9 @@ internal static class ConsoleSink
         return options.ConsoleFormat ?? (isDevelopment ? ConsoleLogFormat.Text : ConsoleLogFormat.Json);
     }
 
-    internal static void BindFormat(IConfiguration configuration, LoggingOptions options)
+    internal static void BindFormat(LoggingSectionOptions loggingSection, LoggingOptions options)
     {
-        var value = configuration["Logging:ConsoleFormat"];
+        var value = loggingSection.ConsoleFormat;
         if (!string.IsNullOrWhiteSpace(value) && Enum.TryParse<ConsoleLogFormat>(value, true, out var parsed)
             && Enum.IsDefined(parsed))
             options.ConsoleFormat = parsed;

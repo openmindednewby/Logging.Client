@@ -75,7 +75,7 @@ public class TraceContextAndConsoleFormatTests
             .AddInMemoryCollection(new Dictionary<string, string?> { ["Logging:ConsoleFormat"] = "text" })
             .Build();
 
-        ConsoleSink.BindFormat(configuration, options);
+        ConsoleSink.BindFormat(ConfigSections.Logging(configuration), options);
 
         options.ConsoleFormat.Should().Be(ConsoleLogFormat.Text);
     }
